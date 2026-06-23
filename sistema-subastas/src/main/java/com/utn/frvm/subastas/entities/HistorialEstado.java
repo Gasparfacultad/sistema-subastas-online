@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "historiales_estados")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,14 +20,10 @@ public class HistorialEstado {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subasta_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Subasta subasta;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "usuario_responsable_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Usuario usuarioResponsable;
 
     @Enumerated(EnumType.STRING)

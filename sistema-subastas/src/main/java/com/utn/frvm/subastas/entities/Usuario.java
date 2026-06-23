@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "usuarios")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -50,8 +51,6 @@ public class Usuario {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bloqueado_por_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Usuario bloqueadoPor;
 
     @Column(name = "motivo_bloqueo", length = 255)

@@ -11,13 +11,13 @@ import java.math.BigDecimal;
 @Builder
 public class PujaRequestDTO {
 
-    @NotNull(message = "El ID de la subasta es obligatorio")
+    @NotNull(message = "{puja.subastaId.notnull}")
     private Long subastaId;
 
-    @NotNull(message = "El ID del comprador es obligatorio")
+    @NotNull(message = "{puja.compradorId.notnull}")
     private Long compradorId;
 
-    @NotNull(message = "El monto de la puja es obligatorio")
-    @Positive(message = "El monto de la puja debe ser mayor a cero")
+    @NotNull(message = "{puja.monto.notnull}")
+    @Positive(message = "{puja.monto.positive}")
     private BigDecimal monto;
 }
