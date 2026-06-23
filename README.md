@@ -40,7 +40,7 @@ Este sistema permite gestionar subastas online donde los usuarios pueden:
 
 | Capa | Tecnología |
 | :--- | :--- |
-| **Backend** | Java 17, Spring Boot 3.x, Spring Security, JWT |
+| **Backend** | Java 21, Spring Boot 4.x, Spring Security, JWT |
 | **Persistencia** | MySQL 8.x, Spring Data JPA (Hibernate) |
 | **Frontend (Plus)** | HTML5, CSS3, JavaScript (Fetch API) |
 | **Control de Versiones** | Git + GitHub |
