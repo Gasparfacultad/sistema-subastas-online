@@ -46,6 +46,3 @@ Este sistema permite gestionar subastas online donde los usuarios pueden:
 | **Control de Versiones** | Git + GitHub |
 | **Documentación API** | Postman / OpenAPI (Swagger) |
 | **Construcción** | Maven |
-
-```sql
-CREATE DATABASE subastas_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
