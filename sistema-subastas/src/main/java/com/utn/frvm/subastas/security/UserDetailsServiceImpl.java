@@ -1,7 +1,10 @@
 package com.utn.frvm.subastas.security;
 
 import com.utn.frvm.subastas.entities.Usuario;
+import com.utn.frvm.subastas.enums.EstadoUsuario;
 import com.utn.frvm.subastas.repositories.UsuarioRepository;
+
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +27,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
+        if (usuario.getEstado() != EstadoUsuario.ACTIVO) {
+            throw new DisabledException(
+                    "Usuario bloqueado o inactivo");
+        }
         return new User(
                 usuario.getUsername(),
                 usuario.getPassword(),
