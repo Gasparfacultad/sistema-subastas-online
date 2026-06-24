@@ -6,6 +6,7 @@ import com.utn.frvm.subastas.entities.Puja;
 import com.utn.frvm.subastas.entities.Subasta;
 import com.utn.frvm.subastas.entities.Usuario;
 import com.utn.frvm.subastas.enums.EstadoSubasta;
+import com.utn.frvm.subastas.enums.EstadoUsuario;
 import com.utn.frvm.subastas.exceptions.BusinessRuleException;
 import com.utn.frvm.subastas.exceptions.ResourceNotFoundException;
 import com.utn.frvm.subastas.repositories.PujaRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,6 +42,16 @@ public class PujaService {
 
         Usuario comprador = usuarioRepository.findById(compradorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprador no encontrado con ID: " + compradorId));
+        
+        if (comprador.getEstado() != EstadoUsuario.ACTIVO) {
+            throw new BusinessRuleException(
+            "El usuario se encuentra bloqueado o inactivo.");
+        }
+        
+        if (subasta.getFechaCierre().isBefore(LocalDateTime.now())) {
+        throw new BusinessRuleException(
+            "La subasta ya se encuentra cerrada.");
+        }
 
         if (subasta.getVendedor().getId().equals(comprador.getId())) {
             throw new BusinessRuleException("El vendedor no puede ofertar en su propia subasta.");
@@ -54,14 +66,6 @@ public class PujaService {
             throw new BusinessRuleException("El monto de la puja debe ser estrictamente mayor a " + threshold);
         }
 
-        List<Puja> previousWinningBids = pujaRepository.findBySubastaIdOrderByMontoDesc(subasta.getId());
-        for (Puja p : previousWinningBids) {
-            if (Boolean.TRUE.equals(p.getEsGanadora())) {
-                p.setEsGanadora(false);
-                pujaRepository.save(p);
-            }
-        }
-
         Puja nuevaPuja = Puja.builder()
                 .subasta(subasta)
                 .comprador(comprador)
@@ -70,6 +74,7 @@ public class PujaService {
                 .build();
 
         Puja savedPuja = pujaRepository.save(nuevaPuja);
+        pujaRepository.updatePreviousWinningBidsToFalse(subasta.getId(), savedPuja.getId());
 
         subasta.setMontoActual(dto.getMonto());
         subasta.setGanadorActual(comprador);
