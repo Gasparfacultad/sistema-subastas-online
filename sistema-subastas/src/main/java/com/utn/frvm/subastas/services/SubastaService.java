@@ -18,6 +18,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +47,20 @@ public class SubastaService {
         if (request.getEstado() != EstadoSubasta.BORRADOR && request.getEstado() != EstadoSubasta.PUBLICADA) {
             throw new BusinessRuleException("Una nueva subasta debe crearse en estado BORRADOR o PUBLICADA.");
         }
+        if (request.getPrecioBase() == null ||  request.getPrecioBase().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("El precio base debe ser mayor a cero.");}
+
+        if (request.getIncrementoMinimoPuja() == null || request.getIncrementoMinimoPuja().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException( "El incremento mínimo debe ser mayor a cero.");
+        }
+
+        if (request.getFechaInicio() == null || request.getFechaCierre() == null) {
+            throw new BusinessRuleException( "Las fechas de inicio y cierre son obligatorias.");
+        }
+
+        if (!request.getFechaInicio().isBefore(request.getFechaCierre())) {
+            throw new BusinessRuleException( "La fecha de inicio debe ser anterior a la fecha de cierre.");
+        }
 
         Usuario vendedor = usuarioRepository.findById(request.getVendedorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vendedor no encontrado con ID: " + request.getVendedorId()));
@@ -68,18 +83,21 @@ public class SubastaService {
         return mapToResponse(subastaRepository.save(subasta));
     }
 
+    @Transactional(readOnly = true)
     public SubastaResponseDTO getById(Long id) {
         Subasta subasta = subastaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Subasta no encontrada con ID: " + id));
         return mapToResponse(subasta);
     }
 
+    @Transactional(readOnly = true)
     public List<SubastaResponseDTO> getByVendedorId(Long vendedorId) {
         return subastaRepository.findByVendedorId(vendedorId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<SubastaResponseDTO> getByEstado(EstadoSubasta estado) {
         return subastaRepository.findByEstado(estado).stream()
                 .map(this::mapToResponse)
@@ -90,6 +108,18 @@ public class SubastaService {
     public void update(Long id, SubastaRequestDTO request) {
         Subasta subasta = subastaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Subasta no encontrada con ID: " + id));
+
+        if (request.getPrecioBase() == null || request.getPrecioBase().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("El precio base debe ser mayor a cero.");}
+
+        if (request.getIncrementoMinimoPuja() == null || request.getIncrementoMinimoPuja().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("El incremento mínimo debe ser mayor a cero.");}
+
+        if (request.getFechaInicio() == null || request.getFechaCierre() == null) {
+            throw new BusinessRuleException( "Las fechas de inicio y cierre son obligatorias.");}
+
+        if (!request.getFechaInicio().isBefore(request.getFechaCierre())) {
+            throw new BusinessRuleException("La fecha de inicio debe ser anterior a la fecha de cierre.");}
 
         subasta.setPrecioBase(request.getPrecioBase());
         subasta.setIncrementoMinimoPuja(request.getIncrementoMinimoPuja());

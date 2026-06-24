@@ -46,18 +46,21 @@ public class ProductoService {
         return mapToResponse(productoRepository.save(producto));
     }
 
+    @Transactional(readOnly = true)
     public ProductoResponseDTO getById(Long id) {
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
         return mapToResponse(producto);
     }
 
+    @Transactional(readOnly = true)
     public List<ProductoResponseDTO> getByVendedorId(Long vendedorId) {
         return productoRepository.findByVendedorId(vendedorId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ProductoResponseDTO> getByEstado(EstadoProducto estado) {
         return productoRepository.findByEstado(estado).stream()
                 .map(this::mapToResponse)
