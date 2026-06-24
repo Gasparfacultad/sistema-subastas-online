@@ -25,7 +25,8 @@ public class PujaService {
     private final SubastaRepository subastaRepository;
     private final UsuarioRepository usuarioRepository;
 
-    public PujaService(PujaRepository pujaRepository, SubastaRepository subastaRepository, UsuarioRepository usuarioRepository) {
+    public PujaService(PujaRepository pujaRepository, SubastaRepository subastaRepository,
+            UsuarioRepository usuarioRepository) {
         this.pujaRepository = pujaRepository;
         this.subastaRepository = subastaRepository;
         this.usuarioRepository = usuarioRepository;
@@ -33,8 +34,9 @@ public class PujaService {
 
     @Transactional
     public PujaResponseDTO realizarPuja(PujaRequestDTO dto, Long compradorId) {
-        Subasta subasta = subastaRepository.findById(dto.getSubastaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Subasta no encontrada con ID: " + dto.getSubastaId()));
+        Subasta subasta = subastaRepository.findByIdForUpdate(dto.getSubastaId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Subasta no encontrada con ID: " + dto.getSubastaId()));
 
         Usuario comprador = usuarioRepository.findById(compradorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprador no encontrado con ID: " + compradorId));

@@ -2,6 +2,9 @@ package com.utn.frvm.subastas.repositories;
 
 import com.utn.frvm.subastas.entities.Subasta;
 import com.utn.frvm.subastas.enums.EstadoSubasta;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +22,9 @@ public interface SubastaRepository extends JpaRepository<Subasta, Long> {
     @Query("SELECT s FROM Subasta s WHERE s.estado = :estado AND s.fechaCierre <= :fechaCierre")
     List<Subasta> findByEstadoAndFechaCierreBeforeOrEqual(
             @Param("estado") EstadoSubasta estado,
-            @Param("fechaCierre") LocalDateTime fechaCierre
-    );
+            @Param("fechaCierre") LocalDateTime fechaCierre);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Subasta s WHERE s.id = :id")
+    Optional<Subasta> findByIdForUpdate(@Param("id") Long id);
 }
