@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -61,10 +62,10 @@ public class UsuarioController {
             @ApiResponse(responseCode = "200", description = "Usuario bloqueado exitosamente"),
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos o faltantes"),
             @ApiResponse(responseCode = "403", description = "Acceso denegado"),
-            @ApiResponse(responseCode = "404", description = "Usuario o Administrador no encontrado")
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
-    public ResponseEntity<Void> blockUser(@PathVariable Long id, @RequestParam String motivo, @RequestParam Long adminId) {
-        usuarioService.blockUser(id, motivo, adminId);
+    public ResponseEntity<Void> blockUser(@PathVariable Long id, @RequestParam String motivo, Authentication authentication) {
+        usuarioService.blockUser(id, motivo, authentication.getName());
         return ResponseEntity.ok().build();
     }
 }

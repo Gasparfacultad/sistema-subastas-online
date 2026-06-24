@@ -3,8 +3,11 @@ package com.utn.frvm.subastas.services;
 import com.utn.frvm.subastas.dtos.UsuarioResponseDTO;
 import com.utn.frvm.subastas.entities.Usuario;
 import com.utn.frvm.subastas.enums.EstadoUsuario;
+import com.utn.frvm.subastas.enums.RolUsuario;
+import com.utn.frvm.subastas.exceptions.BusinessRuleException;
 import com.utn.frvm.subastas.exceptions.ResourceNotFoundException;
 import com.utn.frvm.subastas.repositories.UsuarioRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -39,11 +42,17 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void blockUser(Long id, String motivo, Long adminId) {
+    public void blockUser(Long id, String motivo, String adminUsername) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
-        Usuario admin = usuarioRepository.findById(adminId)
-                .orElseThrow(() -> new ResourceNotFoundException("Administrador no encontrado con ID: " + adminId));
+        Usuario admin = usuarioRepository.findByUsername(adminUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Administrador no encontrado con username: " + adminUsername));
+
+        if (admin.getRol() != RolUsuario.ROLE_ADMIN) {
+            throw new BusinessRuleException(
+                    "Solo un administrador autorizado puede bloquear usuarios.",
+                    HttpStatus.FORBIDDEN);
+        }
 
         usuario.setEstado(EstadoUsuario.BLOQUEADO);
         usuario.setMotivoBloqueo(motivo);
