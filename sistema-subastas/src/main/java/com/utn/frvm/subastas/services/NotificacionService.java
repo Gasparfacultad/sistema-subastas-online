@@ -34,8 +34,10 @@ public class NotificacionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + usuarioId));
 
         Subasta subasta = null;
+        
         if (subastaId != null) {
-            subasta = subastaRepository.findById(subastaId).orElse(null);
+            subasta = subastaRepository.findById(subastaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subasta no encontrada con ID: " + subastaId));
         }
 
         Notificacion notificacion = Notificacion.builder()
