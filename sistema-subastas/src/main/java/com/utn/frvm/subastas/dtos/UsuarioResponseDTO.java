@@ -19,7 +19,6 @@ public class UsuarioResponseDTO {
     private String verificationToken;
     private Integer incidenciasAcumuladas;
     private LocalDateTime fechaRegistro;
-    private LocalDateTime fechaActualizacion;
     private Long bloqueadoPorId;
     private String motivoBloqueo;
     private LocalDateTime fechaBloqueo;

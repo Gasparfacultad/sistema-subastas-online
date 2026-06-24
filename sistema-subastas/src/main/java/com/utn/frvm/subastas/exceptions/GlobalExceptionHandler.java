@@ -66,7 +66,6 @@ public class GlobalExceptionHandler {
         problemDetail.setTitle("Error Interno del Servidor");
         problemDetail.setType(URI.create("https://api.subastas.com/errors/internal-server-error"));
         problemDetail.setProperty("timestamp", Instant.now());
-        // El stack trace no se expone al cliente por motivos de seguridad.
         return problemDetail;
     }
 }

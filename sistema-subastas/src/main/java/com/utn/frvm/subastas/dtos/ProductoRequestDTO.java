@@ -12,19 +12,19 @@ import lombok.*;
 @Builder
 public class ProductoRequestDTO {
 
-    @NotNull(message = "La categoría es obligatoria")
+    @NotNull(message = "{producto.categoriaId.notnull}")
     private Long categoriaId;
 
-    @NotNull(message = "El vendedor es obligatorio")
+    @NotNull(message = "{producto.vendedorId.notnull}")
     private Long vendedorId;
 
-    @NotBlank(message = "El nombre del producto no puede estar vacío")
-    @Size(min = 3, max = 150, message = "El nombre del producto debe tener entre 3 y 150 caracteres")
+    @NotBlank(message = "{producto.nombre.notblank}")
+    @Size(min = 3, max = 150, message = "{producto.nombre.size}")
     private String nombre;
 
-    @NotBlank(message = "La descripción no puede estar vacía")
+    @NotBlank(message = "{producto.descripcion.notblank}")
     private String descripcion;
 
-    @NotNull(message = "El estado del producto es obligatorio")
+    @NotNull(message = "{producto.estado.notnull}")
     private EstadoProducto estado;
 }

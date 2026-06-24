@@ -46,9 +46,6 @@ public class Usuario {
     @Column(name = "fecha_registro", nullable = false, updatable = false)
     private LocalDateTime fechaRegistro;
 
-    @Column(name = "fecha_actualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bloqueado_por_id")
     private Usuario bloqueadoPor;
@@ -62,14 +59,8 @@ public class Usuario {
     @PrePersist
     protected void onCreate() {
         this.fechaRegistro = LocalDateTime.now();
-        this.fechaActualizacion = LocalDateTime.now();
         if (this.incidenciasAcumuladas == null) {
             this.incidenciasAcumuladas = 0;
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.fechaActualizacion = LocalDateTime.now();
     }
 }
