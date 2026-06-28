@@ -24,7 +24,15 @@ public interface SubastaRepository extends JpaRepository<Subasta, Long> {
             @Param("estado") EstadoSubasta estado,
             @Param("fechaCierre") LocalDateTime fechaCierre);
 
+    @Query("SELECT s FROM Subasta s WHERE s.estado = :estado AND s.fechaInicio <= :ahora")
+    List<Subasta> findByEstadoAndFechaInicioBeforeOrEqual(
+        @Param("estado") EstadoSubasta estado,
+        @Param("ahora") LocalDateTime ahora
+    );        
+    
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM Subasta s WHERE s.id = :id")
     Optional<Subasta> findByIdForUpdate(@Param("id") Long id);
+
+    long countByProductoIdAndEstadoIn(Long id, List<EstadoSubasta> asList);
 }

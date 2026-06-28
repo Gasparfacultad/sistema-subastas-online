@@ -61,6 +61,11 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
+    boolean isAdmin(Long usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
+        return usuario != null && usuario.getRol() == RolUsuario.ROLE_ADMIN;
+    }   
+
     private UsuarioResponseDTO mapToResponse(Usuario usuario) {
         return UsuarioResponseDTO.builder()
                 .id(usuario.getId())

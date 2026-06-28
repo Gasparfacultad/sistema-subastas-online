@@ -2,15 +2,21 @@ package com.utn.frvm.subastas.controllers;
 
 import com.utn.frvm.subastas.dtos.ProductoRequestDTO;
 import com.utn.frvm.subastas.dtos.ProductoResponseDTO;
+import com.utn.frvm.subastas.entities.Usuario;
 import com.utn.frvm.subastas.enums.EstadoProducto;
+import com.utn.frvm.subastas.exceptions.ResourceNotFoundException;
+import com.utn.frvm.subastas.repositories.UsuarioRepository;
 import com.utn.frvm.subastas.services.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,9 +27,11 @@ import java.util.List;
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final UsuarioRepository usuarioRepository;
 
-    public ProductoController(ProductoService productoService) {
+    public ProductoController(ProductoService productoService, UsuarioRepository usuarioRepository) {
         this.productoService = productoService;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @PostMapping
@@ -33,6 +41,8 @@ public class ProductoController {
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
             @ApiResponse(responseCode = "404", description = "Categoría o Vendedor no encontrado")
     })
+
+    @PreAuthorize("hasRole('ROLE_SELLER')")
     public ResponseEntity<ProductoResponseDTO> create(@Valid @RequestBody ProductoRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productoService.create(request));
     }
@@ -72,8 +82,29 @@ public class ProductoController {
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
             @ApiResponse(responseCode = "404", description = "Producto o Categoría no encontrados")
     })
-    public ResponseEntity<Void> update(@PathVariable Long id, @Valid @RequestBody ProductoRequestDTO request) {
-        productoService.update(id, request);
+
+    @PreAuthorize("hasRole('ROLE_SELLER')")
+    public ResponseEntity<Void> update(@PathVariable Long id, @Valid @RequestBody ProductoRequestDTO request, Authentication authentication) {
+        // Extraer el ID del usuario autenticado
+        Long usuarioId = extractUserIdFromAuthentication(authentication);
+        productoService.update(id, request, usuarioId);
         return ResponseEntity.ok().build();
-    }
+        }
+
+        // Método auxiliar (puedes ponerlo en un servicio o en el controller)
+        private Long extractUserIdFromAuthentication(Authentication authentication) {
+            String username = authentication.getName();
+            Usuario usuario = usuarioRepository.findByUsername(username)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+            return usuario.getId();
+        }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_SELLER')")
+    public ResponseEntity<Void> delete( @PathVariable Long id, Authentication authentication) {
+        
+        Long usuarioId = extractUserIdFromAuthentication(authentication);
+        productoService.delete(id, usuarioId);
+        return ResponseEntity.noContent().build();
+    }    
 }

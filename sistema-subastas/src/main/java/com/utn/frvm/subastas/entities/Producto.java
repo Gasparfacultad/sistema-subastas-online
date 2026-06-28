@@ -4,6 +4,7 @@ import com.utn.frvm.subastas.enums.EstadoProducto;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Entity
 @Table(name = "productos")
@@ -51,5 +52,10 @@ public class Producto {
     @PreUpdate
     protected void onUpdate() {
         this.actualizadoEn = LocalDateTime.now();
+    }
+
+    public Optional<Categoria> getSubastas() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getSubastas'");
     }
 }
