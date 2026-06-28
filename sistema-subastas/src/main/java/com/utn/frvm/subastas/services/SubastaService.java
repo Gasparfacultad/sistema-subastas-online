@@ -12,6 +12,7 @@ import com.utn.frvm.subastas.exceptions.BusinessRuleException;
 import com.utn.frvm.subastas.exceptions.ResourceNotFoundException;
 import com.utn.frvm.subastas.repositories.HistorialEstadoRepository;
 import com.utn.frvm.subastas.repositories.ProductoRepository;
+import com.utn.frvm.subastas.repositories.PujaRepository;
 import com.utn.frvm.subastas.repositories.SubastaRepository;
 import com.utn.frvm.subastas.repositories.UsuarioRepository;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,15 +32,17 @@ public class SubastaService {
     private final UsuarioRepository usuarioRepository;
     private final HistorialEstadoRepository historialEstadoRepository;
     private final NotificacionService notificacionService;
+    private final PujaRepository pujaRepository;
 
     public SubastaService(SubastaRepository subastaRepository, ProductoRepository productoRepository,
                           UsuarioRepository usuarioRepository, HistorialEstadoRepository historialEstadoRepository,
-                          NotificacionService notificacionService) {
+                          NotificacionService notificacionService, PujaRepository pujaRepository) {
         this.subastaRepository = subastaRepository;
         this.productoRepository = productoRepository;
         this.usuarioRepository = usuarioRepository;
         this.historialEstadoRepository = historialEstadoRepository;
         this.notificacionService = notificacionService;
+        this.pujaRepository = pujaRepository;
     }
 
     @Transactional
@@ -191,6 +194,7 @@ public class SubastaService {
     }
 
     private SubastaResponseDTO mapToResponse(Subasta subasta) {
+        long count = pujaRepository.countBySubastaId(subasta.getId());
         return SubastaResponseDTO.builder()
                 .id(subasta.getId())
                 .vendedorId(subasta.getVendedor().getId())
@@ -212,6 +216,7 @@ public class SubastaService {
                 .titulo(subasta.getTitulo())
                 .descripcion(subasta.getDescripcion())
                 .estado(subasta.getEstado())
+                .cantidadPujas(count)
                 .build();
     }
 }

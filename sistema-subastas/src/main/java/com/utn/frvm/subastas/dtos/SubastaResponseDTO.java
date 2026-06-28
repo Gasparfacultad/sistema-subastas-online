@@ -31,4 +31,5 @@ public class SubastaResponseDTO {
     private String titulo;
     private String descripcion;
     private EstadoSubasta estado;
+    private Long cantidadPujas;
 }

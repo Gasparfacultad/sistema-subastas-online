@@ -13,6 +13,8 @@ public interface PujaRepository extends JpaRepository<Puja, Long> {
 
     List<Puja> findBySubastaIdOrderByMontoDesc(Long subastaId);
 
+    long countBySubastaId(Long subastaId);
+
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Puja p SET p.esGanadora = false WHERE p.subasta.id = :subastaId AND p.id != :pujaGanadoraId")
     int updatePreviousWinningBidsToFalse(@Param("subastaId") Long subastaId,
