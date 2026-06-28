@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subastas Online - Trabajo Práctico Integrador</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="nav-container">
+            <a href="#" class="logo" onclick="navigateTo('catalog')">
+                <i class="fa-solid fa-gavel"></i>
+                SubastasOnline
+            </a>
+            
+            <nav id="navbar-links">
+                
+            </nav>
+
+            <div class="auth-buttons" id="auth-nav-section">
+                
+            </div>
+        </div>
+    </header>
+
+    <main>
+
+        <section id="view-auth" class="view">
+            <div class="auth-wrapper">
+                <div class="auth-card">
+                    <div class="auth-card-content">
+                        
+                        <div class="tab-container" style="margin-bottom: 1.5rem;">
+                            <button class="tab-btn active" onclick="switchAuthTab('login')">Ingresar</button>
+                            <button class="tab-btn" onclick="switchAuthTab('register')">Registrarse</button>
+                        </div>
+
+                        <div id="auth-login-form">
+                            <h2>¡Bienvenido!</h2>
+                            <p class="subtitle">Ingresa tus credenciales para operar</p>
+                            <form id="form-login" onsubmit="handleLogin(event)">
+                                <div class="form-group">
+                                    <label for="login-username">Usuario</label>
+                                    <input type="text" id="login-username" class="form-control" placeholder="Ej. juan123" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="login-password">Contraseña</label>
+                                    <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                                    <i class="fa-solid fa-sign-in"></i> Iniciar Sesión
+                                </button>
+                            </form>
+                        </div>
+
+                        <div id="auth-register-form" style="display: none;">
+                            <h2>Crear Cuenta</h2>
+                            <p class="subtitle">Regístrate para comprar o vender</p>
+                            <form id="form-register" onsubmit="handleRegister(event)">
+                                <div class="form-group">
+                                    <label for="register-username">Nombre de Usuario</label>
+                                    <input type="text" id="register-username" class="form-control" placeholder="Ej. maría99" required minlength="3">
+                                </div>
+                                <div class="form-group">
+                                    <label for="register-email">Correo Electrónico</label>
+                                    <input type="email" id="register-email" class="form-control" placeholder="maria@mail.com" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="register-password">Contraseña</label>
+                                    <input type="password" id="register-password" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+                                </div>
+                                <div class="form-group">
+                                    <label for="register-role">Rol Solicitado</label>
+                                    <select id="register-role" class="form-control" required>
+                                        <option value="COMPRADOR">Comprador (Role User)</option>
+                                        <option value="VENDEDOR">Vendedor (Role Seller)</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                                    <i class="fa-solid fa-user-plus"></i> Registrarme
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-catalog" class="view">
+            <div class="section-header">
+                <div>
+                    <h1>Subastas Activas</h1>
+                    <p>Encuentra y oferta por productos en tiempo real</p>
+                </div>
+            </div>
+
+            <div class="filters-bar">
+                <div class="search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="catalog-search" class="form-control" placeholder="Buscar por título..." oninput="filterCatalog()">
+                </div>
+                <select id="catalog-filter-category" class="form-control filter-select" onchange="filterCatalog()">
+                    <option value="">Todas las Categorías</option>
+                    
+                </select>
+                <select id="catalog-filter-state" class="form-control filter-select" onchange="filterCatalog()">
+                    <option value="ACTIVA">Subastas Activas</option>
+                    <option value="PUBLICADA">Subastas Publicadas (No iniciadas)</option>
+                    <option value="FINALIZADA">Finalizadas / Cerradas</option>
+                    <option value="ADJUDICADA">Adjudicadas</option>
+                    <option value="EN_DISPUTA">En Disputa</option>
+                    <option value="BORRADOR">Borradores</option>
+                    <option value="ALL">Ver Todas</option>
+                </select>
+                <button class="btn btn-secondary" onclick="loadCatalog()"><i class="fa-solid fa-arrows-rotate"></i> Actualizar</button>
+            </div>
+
+            <div class="auctions-grid" id="catalog-grid">
+                
+            </div>
+            
+            <div id="catalog-empty-state" style="display:none; text-align:center; padding: 4rem; color: var(--text-muted);">
+                <i class="fa-solid fa-box-open" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <p>No se encontraron subastas en este estado o filtro.</p>
+            </div>
+        </section>
+
+        <section id="view-detail" class="view">
+            <button class="btn btn-secondary btn-sm" onclick="navigateTo('catalog')" style="margin-bottom: 1.5rem;">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Catálogo
+            </button>
+            
+            <div class="detail-container" id="detail-auction-container">
+                
+            </div>
+        </section>
+
+        <section id="view-seller" class="view">
+            <div class="section-header">
+                <div>
+                    <h1>Panel del Vendedor</h1>
+                    <p>Gestiona tus productos en catálogo y tus eventos de subastas</p>
+                </div>
+            </div>
+
+            <div class="tab-container">
+                <button class="tab-btn active" id="tab-seller-products" onclick="switchSellerTab('products')">Mis Productos</button>
+                <button class="tab-btn" id="tab-seller-auctions" onclick="switchSellerTab('auctions')">Mis Subastas</button>
+            </div>
+
+            <div id="seller-tab-products" class="tab-content active">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>Catálogo de Productos</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openCreateProductModal()">
+                        <i class="fa-solid fa-plus"></i> Registrar Producto
+                    </button>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Categoría</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seller-products-tbody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="seller-tab-auctions" class="tab-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>Mis Eventos de Subasta</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openCreateAuctionModal()">
+                        <i class="fa-solid fa-plus"></i> Crear Nueva Subasta
+                    </button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Título</th>
+                                <th>Producto</th>
+                                <th>Precio Base / Actual</th>
+                                <th>Inicio / Fin</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seller-auctions-tbody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-buyer" class="view">
+            <div class="section-header">
+                <div>
+                    <h1>Panel del Comprador</h1>
+                    <p>Seguimiento de tus ofertas y artículos ganados</p>
+                </div>
+            </div>
+
+            <div class="tab-container">
+                <button class="tab-btn active" id="tab-buyer-won" onclick="switchBuyerTab('won')">Subastas Ganadas</button>
+                <button class="tab-btn" id="tab-buyer-active" onclick="switchBuyerTab('active')">Ofertas Activas</button>
+            </div>
+
+            <div id="buyer-tab-won" class="tab-content active">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Subasta</th>
+                                <th>Título</th>
+                                <th>Vendedor</th>
+                                <th>Precio Final</th>
+                                <th>Adjudicación</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyer-won-tbody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="buyer-tab-active" class="tab-content">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Subasta</th>
+                                <th>Título</th>
+                                <th>Mi Oferta Actual</th>
+                                <th>Incremento Mínimo</th>
+                                <th>Cierre</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyer-active-tbody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-admin" class="view">
+            <div class="section-header">
+                <div>
+                    <h1>Consola de Administración</h1>
+                    <p>Moderación de usuarios, resolución de disputas y auditoría del sistema</p>
+                </div>
+            </div>
+
+            <div class="tab-container">
+                <button class="tab-btn active" id="tab-admin-users" onclick="switchAdminTab('users')">Gestión de Usuarios</button>
+                <button class="tab-btn" id="tab-admin-disputes" onclick="switchAdminTab('disputes')">Gestión de Disputas</button>
+            </div>
+
+            <div id="admin-tab-users" class="tab-content active">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Strikes (Incidencias)</th>
+                                <th>Estado</th>
+                                <th>Auditoría</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-tbody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="admin-tab-disputes" class="tab-content">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>Auditoría de Disputas</h3>
+                    <div>
+                        <select id="admin-disputes-filter" class="form-control" style="width: 200px; display:inline-block;" onchange="loadAdminDisputes()">
+                            <option value="ABIERTA">Abiertas</option>
+                            <option value="RESUELTA_FAVOR_USER">Resuelta Favor Comprador</option>
+                            <option value="RESUELTA_FAVOR_SELLER">Resuelta Favor Vendedor</option>
+                            <option value="RESOLVED_BY_ME">Resueltas por Mí (TC-25)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Subasta ID</th>
+                                <th>Iniciador</th>
+                                <th>Motivo Apertura</th>
+                                <th>Estado</th>
+                                <th>Administrador</th>
+                                <th>Justificación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-disputes-tbody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-notifications" class="view">
+            <div class="section-header">
+                <div>
+                    <h1>Bandeja de Notificaciones</h1>
+                    <p>Alertas del sistema sobre tus pujas, subastas y disputas</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadNotifications()">
+                    <i class="fa-solid fa-arrows-rotate"></i> Actualizar
+                </button>
+            </div>
+
+            <div class="table-wrapper" style="max-width: 900px; margin: 0 auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Mensaje</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notifications-tbody">
+                        
+                    </tbody>
+                </table>
+                <div id="notifications-empty-state" style="display:none; text-align:center; padding: 4rem; color: var(--text-muted);">
+                    <i class="fa-solid fa-bell-slash" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
+                    <p>No tienes notificaciones pendientes.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="modal-overlay" id="modal-product">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="product-modal-title">Registrar Nuevo Producto</h3>
+                <button class="modal-close" onclick="closeModal('modal-product')">&times;</button>
+            </div>
+            <form id="form-product" onsubmit="handleProductSubmit(event)">
+                <input type="hidden" id="product-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="product-name">Nombre del Producto</label>
+                        <input type="text" id="product-name" class="form-control" placeholder="Ej. Notebook Lenovo Legion 5" required minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-description">Descripción Detallada</label>
+                        <textarea id="product-description" class="form-control" rows="3" placeholder="Detalles de estado del producto, especificaciones, etc." required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-category">Categoría</label>
+                            <select id="product-category" class="form-control" required>
+                                
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="product-state">Estado</label>
+                            <select id="product-state" class="form-control" required>
+                                <option value="ACTIVO">Activo (Disponible para subastar)</option>
+                                <option value="INACTIVO">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-product')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Producto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-auction">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="auction-modal-title">Programar Nueva Subasta</h3>
+                <button class="modal-close" onclick="closeModal('modal-auction')">&times;</button>
+            </div>
+            <form id="form-auction" onsubmit="handleAuctionSubmit(event)">
+                <input type="hidden" id="auction-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="auction-title">Título de la Subasta</label>
+                        <input type="text" id="auction-title" class="form-control" placeholder="Ej. Gran Subasta Notebook Gamer" required minlength="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="auction-description">Descripción del Evento</label>
+                        <textarea id="auction-description" class="form-control" rows="2" placeholder="Información específica para los ofertantes"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="auction-product">Seleccionar Producto</label>
+                            <select id="auction-product" class="form-control" required>
+                                
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="auction-state">Estado Inicial</label>
+                            <select id="auction-state" class="form-control" required>
+                                <option value="BORRADOR">Borrador (No visible)</option>
+                                <option value="PUBLICADA">Publicada (Visible, en espera)</option>
+                                <option value="ACTIVA">Activa (Ofertable inmediatamente)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="auction-price-base">Precio Base ($)</label>
+                            <input type="number" id="auction-price-base" class="form-control" step="0.01" min="1" placeholder="150000.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="auction-price-min-increment">Incremento Mínimo ($)</label>
+                            <input type="number" id="auction-price-min-increment" class="form-control" step="0.01" min="1" placeholder="5000.00" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="auction-date-start">Fecha de Inicio</label>
+                            <input type="datetime-local" id="auction-date-start" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="auction-date-end">Fecha de Cierre</label>
+                            <input type="datetime-local" id="auction-date-end" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-auction')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Subasta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-block-user">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Bloquear Cuenta de Usuario</h3>
+                <button class="modal-close" onclick="closeModal('modal-block-user')">&times;</button>
+            </div>
+            <form id="form-block-user" onsubmit="handleBlockUserSubmit(event)">
+                <input type="hidden" id="block-user-id">
+                <div class="modal-body">
+                    <p style="margin-bottom: 1rem; color: var(--text-default);">
+                        Vas a proceder con el bloqueo de la cuenta del usuario <strong id="block-user-name-display"></strong>. Esta acción le impedirá iniciar sesión o realizar acciones transaccionales en el sistema.
+                    </p>
+                    <div class="form-group">
+                        <label for="block-user-reason">Motivo de Bloqueo</label>
+                        <textarea id="block-user-reason" class="form-control" rows="3" placeholder="Ej. Acumulación de disputas perdidas, fraude o mala reputación" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-block-user')">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Confirmar Bloqueo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-resolve-dispute">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Resolver Disputa Académica</h3>
+                <button class="modal-close" onclick="closeModal('modal-resolve-dispute')">&times;</button>
+            </div>
+            <form id="form-resolve-dispute" onsubmit="handleResolveDisputeSubmit(event)">
+                <input type="hidden" id="resolve-dispute-id">
+                <div class="modal-body">
+                    <p style="margin-bottom: 1.5rem; color: var(--text-default);">
+                        Vas a resolver la disputa número <strong id="resolve-dispute-id-display"></strong>. Debes fallar justificadamente a favor del comprador o del vendedor. Se sumará una incidencia (strike) al usuario perdedor.
+                    </p>
+                    <div class="form-group">
+                        <label for="resolve-dispute-choice">Fallo de la Disputa</label>
+                        <select id="resolve-dispute-choice" class="form-control" required>
+                            <option value="RESUELTA_FAVOR_USER">Fallo a favor del COMPRADOR (Penalizar al Vendedor)</option>
+                            <option value="RESUELTA_FAVOR_SELLER">Fallo a favor del VENDEDOR (Penalizar al Comprador)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="resolve-dispute-justification">Justificación de la Resolución</label>
+                        <textarea id="resolve-dispute-justification" class="form-control" rows="3" placeholder="Especificar por qué se falla de esta manera y qué reglas de negocio aplican..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-resolve-dispute')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Resolver e Imponer Strike</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-view-dispute">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Detalles de la Disputa</h3>
+                <button class="modal-close" onclick="closeModal('modal-view-dispute')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>ID Disputa</label>
+                    <div class="form-control" id="view-dispute-id" style="background-color: var(--bg-base);"></div>
+                </div>
+                <div class="form-group">
+                    <label>ID Subasta</label>
+                    <div class="form-control" id="view-dispute-subasta" style="background-color: var(--bg-base);"></div>
+                </div>
+                <div class="form-group">
+                    <label>Iniciador de la Disputa</label>
+                    <div class="form-control" id="view-dispute-iniciador" style="background-color: var(--bg-base);"></div>
+                </div>
+                <div class="form-group">
+                    <label>Motivo de la Reclamación</label>
+                    <div class="form-control" id="view-dispute-motivo" style="height: auto; white-space: pre-wrap; background-color: var(--bg-base);"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <div id="view-dispute-estado"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Administrador Resolutor</label>
+                        <div class="form-control" id="view-dispute-admin" style="background-color: var(--bg-base);"></div>
+                    </div>
+                </div>
+                <div class="form-group" id="view-dispute-justificacion-group">
+                    <label>Justificación de Resolución</label>
+                    <div class="form-control" id="view-dispute-justificacion" style="height: auto; white-space: pre-wrap; background-color: var(--bg-base);"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="closeModal('modal-view-dispute')">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-open-dispute">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Iniciar Proceso de Disputa</h3>
+                <button class="modal-close" onclick="closeModal('modal-open-dispute')">&times;</button>
+            </div>
+            <form id="form-open-dispute" onsubmit="handleOpenDisputeSubmit(event)">
+                <input type="hidden" id="open-dispute-auction-id">
+                <div class="modal-body">
+                    <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+                        Las disputas deben iniciarse cuando haya discrepancias graves en la transacción de la subasta, tales como productos que no coinciden con la descripción, falta de pago o ausencias de comunicación. Un administrador moderará y dictará sentencia.
+                    </p>
+                    <div class="form-group">
+                        <label for="open-dispute-reason">Motivo Detallado de la Reclamación</label>
+                        <textarea id="open-dispute-reason" class="form-control" rows="4" placeholder="Describe claramente el problema con el producto o con la contraparte..." required minlength="10"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-open-dispute')">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Abrir Disputa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-wrapper"></div>
+
+    <div class="console-widget collapsed" id="api-console">
+        <div class="console-header" onclick="toggleConsole()">
+            <span class="console-title">
+                <i class="fa-solid fa-terminal"></i> Consola API REST (Endpoints)
+            </span>
+            <span class="console-toggle" id="console-toggle-icon">
+                <i class="fa-solid fa-chevron-up"></i>
+            </span>
+        </div>
+        <div class="console-body" id="console-logs-body">
+            <div class="console-line" style="color: var(--text-muted); text-align: center;">
+                Inicializando consola de monitoreo... Realiza peticiones para ver logs en tiempo real.
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
