@@ -58,7 +58,7 @@ public class ProductoService {
                                 .vendedor(vendedor)
                                 .nombre(request.getNombre())
                                 .descripcion(request.getDescripcion())
-                                .estado(request.getEstado())
+                                .estado(EstadoProducto.ACTIVO)
                                 .build();
 
                 return mapToResponse(productoRepository.save(producto));
@@ -102,9 +102,15 @@ public class ProductoService {
                                         HttpStatus.FORBIDDEN);
                 }
 
-                boolean tieneSubastaActiva = producto.getSubastas().stream()
-                                .anyMatch(subasta -> subasta.getEstado() == EstadoSubasta.ACTIVA);
-                if (tieneSubastaActiva) {
+                if (request.getEstado() == EstadoProducto.ACTIVO && subastaRepository.existsByProductoId(id)) {
+                        throw new BusinessRuleException(
+                                        "No se puede activar un producto que ya pertenece a una subasta",
+                                        HttpStatus.BAD_REQUEST);
+                }
+
+                long subastasActivas = subastaRepository.countByProductoIdAndEstadoIn(id,
+                                java.util.Arrays.asList(EstadoSubasta.ACTIVA));
+                if (subastasActivas > 0) {
                         throw new BusinessRuleException(
                                         "No se puede modificar un producto que está en una subasta activa");
                 }

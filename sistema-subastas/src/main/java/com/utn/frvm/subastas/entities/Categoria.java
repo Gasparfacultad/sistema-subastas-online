@@ -24,8 +24,4 @@ public class Categoria {
     @Column(length = 255)
     private String descripcion;
 
-    public EstadoSubasta getEstado() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getEstado'");
-    }
 }

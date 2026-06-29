@@ -63,4 +63,14 @@ public class Usuario {
             this.incidenciasAcumuladas = 0;
         }
     }
+
+    public void registrarIncidencia(Usuario admin, String motivo) {
+        this.incidenciasAcumuladas = (this.incidenciasAcumuladas == null ? 0 : this.incidenciasAcumuladas) + 1;
+        if (this.incidenciasAcumuladas >= 3) {
+            this.estado = EstadoUsuario.BLOQUEADO;
+            this.bloqueadoPor = admin;
+            this.fechaBloqueo = LocalDateTime.now();
+            this.motivoBloqueo = "Acumulación de 3 incidencias: " + (motivo != null ? motivo : "");
+        }
+    }
 }

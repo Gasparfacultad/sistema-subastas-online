@@ -14,9 +14,11 @@ import com.utn.frvm.subastas.enums.EstadoUsuario;
 import com.utn.frvm.subastas.enums.RolUsuario;
 import com.utn.frvm.subastas.exceptions.BusinessRuleException;
 import com.utn.frvm.subastas.exceptions.ResourceNotFoundException;
+import com.utn.frvm.subastas.enums.EstadoProducto;
 import com.utn.frvm.subastas.repositories.DisputaRepository;
 import com.utn.frvm.subastas.repositories.HistorialEstadoRepository;
 import com.utn.frvm.subastas.repositories.HistorialIncidenciaRepository;
+import com.utn.frvm.subastas.repositories.ProductoRepository;
 import com.utn.frvm.subastas.repositories.SubastaRepository;
 import com.utn.frvm.subastas.repositories.UsuarioRepository;
 
@@ -36,14 +38,17 @@ public class DisputaService {
     private final SubastaRepository subastaRepository;
     private final UsuarioRepository usuarioRepository;
     private final HistorialIncidenciaRepository historialIncidenciaRepository;
+    private final ProductoRepository productoRepository;
 
     public DisputaService(DisputaRepository disputaRepository, SubastaRepository subastaRepository,
-            UsuarioRepository usuarioRepository, HistorialIncidenciaRepository historialIncidenciaRepository, HistorialEstadoRepository historialEstadoRepository) {
+            UsuarioRepository usuarioRepository, HistorialIncidenciaRepository historialIncidenciaRepository,
+            HistorialEstadoRepository historialEstadoRepository, ProductoRepository productoRepository) {
         this.disputaRepository = disputaRepository;
         this.subastaRepository = subastaRepository;
         this.usuarioRepository = usuarioRepository;
         this.historialIncidenciaRepository = historialIncidenciaRepository;
         this.historialEstadoRepository = historialEstadoRepository;
+        this.productoRepository = productoRepository;
     }
 
     @Transactional
@@ -75,6 +80,10 @@ public class DisputaService {
         }
 
         subasta.setEstado(EstadoSubasta.EN_DISPUTA);
+        if (subasta.getProducto() != null) {
+            subasta.getProducto().setEstado(EstadoProducto.INACTIVO);
+            productoRepository.save(subasta.getProducto());
+        }
         subastaRepository.save(subasta);
 
         Disputa disputa = Disputa.builder()
@@ -120,6 +129,10 @@ public class DisputaService {
         } else {
             subasta.setEstado(EstadoSubasta.ADJUDICADA);
         }
+        if (subasta.getProducto() != null) {
+            subasta.getProducto().setEstado(EstadoProducto.INACTIVO);
+            productoRepository.save(subasta.getProducto());
+        }
         subastaRepository.save(subasta);
 
         HistorialEstado historial = HistorialEstado.builder()
@@ -141,13 +154,7 @@ public class DisputaService {
             }
             perdedor = subasta.getGanador();
         }
-        perdedor.setIncidenciasAcumuladas(perdedor.getIncidenciasAcumuladas() + 1);
-        if (perdedor.getIncidenciasAcumuladas() >= 3) {
-            perdedor.setEstado(EstadoUsuario.BLOQUEADO);
-            perdedor.setBloqueadoPor(admin);
-            perdedor.setFechaBloqueo(LocalDateTime.now());
-            perdedor.setMotivoBloqueo("Acumulación de 3 incidencias.");
-        }
+        perdedor.registrarIncidencia(admin, "Disputa resuelta en su contra.");
         usuarioRepository.save(perdedor);
         HistorialIncidencia incidencia = HistorialIncidencia.builder()
                 .usuario(perdedor)

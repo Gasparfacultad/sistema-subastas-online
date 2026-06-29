@@ -35,4 +35,6 @@ public interface SubastaRepository extends JpaRepository<Subasta, Long> {
     Optional<Subasta> findByIdForUpdate(@Param("id") Long id);
 
     long countByProductoIdAndEstadoIn(Long id, List<EstadoSubasta> asList);
+
+    boolean existsByProductoId(Long productoId);
 }

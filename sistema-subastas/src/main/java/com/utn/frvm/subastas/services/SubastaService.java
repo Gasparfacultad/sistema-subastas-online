@@ -6,6 +6,7 @@ import com.utn.frvm.subastas.entities.HistorialEstado;
 import com.utn.frvm.subastas.entities.Producto;
 import com.utn.frvm.subastas.entities.Subasta;
 import com.utn.frvm.subastas.entities.Usuario;
+import com.utn.frvm.subastas.enums.EstadoProducto;
 import com.utn.frvm.subastas.enums.EstadoSubasta;
 import com.utn.frvm.subastas.enums.EstadoUsuario;
 import com.utn.frvm.subastas.enums.RolUsuario;
@@ -83,6 +84,17 @@ public class SubastaService {
                     "El vendedor está bloqueado o inactivo y no puede crear subastas.",
                     HttpStatus.FORBIDDEN);
         }
+
+        if (producto.getEstado() != EstadoProducto.ACTIVO) {
+            throw new BusinessRuleException("El producto no está activo o disponible para subasta.");
+        }
+
+        if (subastaRepository.existsByProductoId(producto.getId())) {
+            throw new BusinessRuleException("El producto ya pertenece a una subasta.");
+        }
+
+        producto.setEstado(EstadoProducto.INACTIVO);
+        productoRepository.save(producto);
         Subasta subasta = Subasta.builder()
                 .vendedor(vendedor)
                 .producto(producto)
@@ -194,6 +206,12 @@ public class SubastaService {
         Subasta subasta = subastaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Subasta no encontrada con ID: " + id));
 
+        Producto producto = subasta.getProducto();
+        if (producto != null) {
+            producto.setEstado(EstadoProducto.INACTIVO);
+            productoRepository.save(producto);
+        }
+
         Usuario admin = usuarioRepository.findById(adminId)
             .orElseThrow(() -> new ResourceNotFoundException("Administrador no encontrado"));
         EstadoSubasta estadoAnterior = subasta.getEstado();
@@ -234,6 +252,11 @@ public class SubastaService {
         LocalDateTime now = LocalDateTime.now();
         List<Subasta> expiradas = subastaRepository.findByEstadoAndFechaCierreBeforeOrEqual(EstadoSubasta.ACTIVA, now);
         for (Subasta subasta : expiradas) {
+            Producto producto = subasta.getProducto();
+            if (producto != null) {
+                producto.setEstado(EstadoProducto.INACTIVO);
+                productoRepository.save(producto);
+            }
             EstadoSubasta anterior = subasta.getEstado();
             
             EstadoSubasta nuevoEstado = (subasta.getGanadorActual() != null) ? EstadoSubasta.ADJUDICADA : EstadoSubasta.FINALIZADA;

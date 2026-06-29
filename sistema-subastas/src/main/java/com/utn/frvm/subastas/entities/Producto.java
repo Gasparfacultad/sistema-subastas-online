@@ -54,8 +54,4 @@ public class Producto {
         this.actualizadoEn = LocalDateTime.now();
     }
 
-    public Optional<Categoria> getSubastas() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getSubastas'");
-    }
 }
