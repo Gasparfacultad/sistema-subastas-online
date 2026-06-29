@@ -1,5 +1,5 @@
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'https://sistema-subastas-online.onrender.com';
 
 const state = {
     token: localStorage.getItem('jwt_token') || null,
