@@ -37,19 +37,23 @@ window.addEventListener('DOMContentLoaded', async () => {
     ];
     populateCategoryDropdowns();
 
+    let sessionRestored = false;
     if (state.token) {
-        const restored = await restoreSession();
-        if (!restored) {
+        sessionRestored = await restoreSession();
+        if (!sessionRestored) {
             handleLogout();
         }
     } else {
         updateNavbar();
     }
 
-    await loadCatalog();
-    navigateTo('catalog');
-
-    startNotificationsPolling();
+    if (sessionRestored) {
+        await loadCatalog();
+        navigateTo('catalog');
+        startNotificationsPolling();
+    } else {
+        navigateTo('auth');
+    }
 });
 
 async function restoreSession() {
@@ -148,10 +152,17 @@ async function apiCall(endpoint, options = {}) {
 }
 
 function navigateTo(viewId) {
-    
     if (state.auctionTimerInterval) {
         clearInterval(state.auctionTimerInterval);
         state.auctionTimerInterval = null;
+    }
+
+    // Force redirection to auth view if user is not authenticated
+    if (!state.user && viewId !== 'auth') {
+        if (state.activeView && state.activeView !== 'auth') {
+            showToast('Por favor, inicia sesión para continuar.', 'warning');
+        }
+        viewId = 'auth';
     }
 
     document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
@@ -192,9 +203,8 @@ function updateNavbar() {
     navbarLinks.innerHTML = '';
     authNavSection.innerHTML = '';
 
-    navbarLinks.innerHTML += `<a class="nav-link active" onclick="navigateTo('catalog')"><i class="fa-solid fa-house"></i> Catálogo</a>`;
-    
     if (state.user) {
+        navbarLinks.innerHTML += `<a class="nav-link active" onclick="navigateTo('catalog')"><i class="fa-solid fa-house"></i> Catálogo</a>`;
         
         if (state.user.rol === 'ROLE_SELLER') {
             navbarLinks.innerHTML += `<a class="nav-link" onclick="navigateTo('seller')"><i class="fa-solid fa-tags"></i> Mi Panel Vendedor</a>`;
@@ -230,7 +240,6 @@ function updateNavbar() {
             </div>
         `;
     } else {
-        
         authNavSection.innerHTML = `
             <button class="btn btn-primary btn-sm" onclick="navigateTo('auth'); switchAuthTab('login');">
                 <i class="fa-solid fa-sign-in"></i> Acceder / Registrarse
@@ -319,7 +328,7 @@ function handleLogout() {
     }
     
     updateNavbar();
-    navigateTo('catalog');
+    navigateTo('auth');
     showToast('Sesión cerrada correctamente.', 'info');
 }
 
