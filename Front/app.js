@@ -1727,10 +1727,10 @@ function toggleConsole() {
     
     if (apiConsole.classList.contains('collapsed')) {
         apiConsole.classList.remove('collapsed');
-        icon.classList.replace('fa-solid fa-chevron-up', 'fa-solid fa-chevron-down');
+        icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
     } else {
         apiConsole.classList.add('collapsed');
-        icon.classList.replace('fa-solid fa-chevron-down', 'fa-solid fa-chevron-up');
+        icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
     }
 }
 
