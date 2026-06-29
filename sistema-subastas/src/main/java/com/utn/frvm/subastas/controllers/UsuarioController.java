@@ -64,8 +64,26 @@ public class UsuarioController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado"),
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
-    public ResponseEntity<Void> blockUser(@PathVariable Long id, @RequestParam String motivo, Authentication authentication) {
+    public ResponseEntity<Void> blockUser(@PathVariable Long id, @RequestParam String motivo,
+            Authentication authentication) {
         usuarioService.blockUser(id, motivo, authentication.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/desbloquear")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Desbloquear usuario", description = "Permite a un administrador desbloquear a un usuario y opcionalmente reducir su contador de incidencias")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuario desbloqueado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos o faltantes"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    public ResponseEntity<Void> unblockUser(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "false") boolean reducirIncidencias,
+            Authentication authentication) {
+        usuarioService.unblockUser(id, reducirIncidencias, authentication.getName());
         return ResponseEntity.ok().build();
     }
 }

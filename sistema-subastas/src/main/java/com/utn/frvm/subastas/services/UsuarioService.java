@@ -46,7 +46,8 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
         Usuario admin = usuarioRepository.findByUsername(adminUsername)
-                .orElseThrow(() -> new ResourceNotFoundException("Administrador no encontrado con username: " + adminUsername));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Administrador no encontrado con username: " + adminUsername));
 
         if (admin.getRol() != RolUsuario.ROLE_ADMIN) {
             throw new BusinessRuleException(
@@ -61,10 +62,27 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
+    @Transactional
+    public void unblockUser(Long id, boolean reducirIncidencias, String adminUsername) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
+        if (usuario.getEstado() != EstadoUsuario.BLOQUEADO) {
+            throw new BusinessRuleException("El usuario no está bloqueado.");
+        }
+        usuario.setEstado(EstadoUsuario.ACTIVO);
+        usuario.setBloqueadoPor(null);
+        usuario.setFechaBloqueo(null);
+        usuario.setMotivoBloqueo(null);
+        if (reducirIncidencias && usuario.getIncidenciasAcumuladas() > 0) {
+            usuario.setIncidenciasAcumuladas(usuario.getIncidenciasAcumuladas() - 1);
+        }
+        usuarioRepository.save(usuario);
+    }
+
     boolean isAdmin(Long usuarioId) {
         Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
         return usuario != null && usuario.getRol() == RolUsuario.ROLE_ADMIN;
-    }   
+    }
 
     private UsuarioResponseDTO mapToResponse(Usuario usuario) {
         return UsuarioResponseDTO.builder()

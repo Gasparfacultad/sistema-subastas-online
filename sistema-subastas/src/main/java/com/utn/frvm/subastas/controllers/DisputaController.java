@@ -2,7 +2,9 @@ package com.utn.frvm.subastas.controllers;
 
 import com.utn.frvm.subastas.dtos.DisputaRequestDTO;
 import com.utn.frvm.subastas.dtos.DisputaResponseDTO;
+import com.utn.frvm.subastas.dtos.HistorialIncidenciaResponseDTO;
 import com.utn.frvm.subastas.enums.EstadoDisputa;
+import com.utn.frvm.subastas.repositories.HistorialIncidenciaRepository;
 import com.utn.frvm.subastas.services.DisputaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,10 +23,13 @@ import java.util.List;
 @Tag(name = "Disputas", description = "Endpoints para la apertura y resolución de disputas")
 public class DisputaController {
 
+    private final HistorialIncidenciaRepository historialIncidenciaRepository;
     private final DisputaService disputaService;
 
-    public DisputaController(DisputaService disputaService) {
+    public DisputaController(DisputaService disputaService,
+            HistorialIncidenciaRepository historialIncidenciaRepository) {
         this.disputaService = disputaService;
+        this.historialIncidenciaRepository = historialIncidenciaRepository;
     }
 
     @PostMapping
@@ -85,5 +90,12 @@ public class DisputaController {
     })
     public ResponseEntity<List<DisputaResponseDTO>> getDisputesByAdmin(@PathVariable Long adminId) {
         return ResponseEntity.ok(disputaService.getDisputesByAdmin(adminId));
+    }
+
+    @GetMapping("/incidencias/usuario/{usuarioId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Historial de incidencias de un usuario", description = "Devuelve todas las penalizaciones registradas para un usuario dado (Solo Administradores)")
+    public ResponseEntity<List<HistorialIncidenciaResponseDTO>> getIncidenciasByUsuario(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(disputaService.getIncidenciasByUsuario(usuarioId));
     }
 }

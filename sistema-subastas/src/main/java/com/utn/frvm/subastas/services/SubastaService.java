@@ -7,6 +7,7 @@ import com.utn.frvm.subastas.entities.Producto;
 import com.utn.frvm.subastas.entities.Subasta;
 import com.utn.frvm.subastas.entities.Usuario;
 import com.utn.frvm.subastas.enums.EstadoSubasta;
+import com.utn.frvm.subastas.enums.EstadoUsuario;
 import com.utn.frvm.subastas.enums.RolUsuario;
 import com.utn.frvm.subastas.enums.TipoNotificacion;
 import com.utn.frvm.subastas.exceptions.BusinessRuleException;
@@ -38,8 +39,8 @@ public class SubastaService {
     private final PujaRepository pujaRepository;
 
     public SubastaService(SubastaRepository subastaRepository, ProductoRepository productoRepository,
-                          UsuarioRepository usuarioRepository, HistorialEstadoRepository historialEstadoRepository,
-                          NotificacionService notificacionService, PujaRepository pujaRepository) {
+            UsuarioRepository usuarioRepository, HistorialEstadoRepository historialEstadoRepository,
+            NotificacionService notificacionService, PujaRepository pujaRepository) {
         this.subastaRepository = subastaRepository;
         this.productoRepository = productoRepository;
         this.usuarioRepository = usuarioRepository;
@@ -53,26 +54,35 @@ public class SubastaService {
         if (request.getEstado() != EstadoSubasta.BORRADOR && request.getEstado() != EstadoSubasta.PUBLICADA) {
             throw new BusinessRuleException("Una nueva subasta debe crearse en estado BORRADOR o PUBLICADA.");
         }
-        if (request.getPrecioBase() == null ||  request.getPrecioBase().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessRuleException("El precio base debe ser mayor a cero.");}
+        if (request.getPrecioBase() == null || request.getPrecioBase().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("El precio base debe ser mayor a cero.");
+        }
 
-        if (request.getIncrementoMinimoPuja() == null || request.getIncrementoMinimoPuja().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessRuleException( "El incremento mínimo debe ser mayor a cero.");
+        if (request.getIncrementoMinimoPuja() == null
+                || request.getIncrementoMinimoPuja().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("El incremento mínimo debe ser mayor a cero.");
         }
 
         if (request.getFechaInicio() == null || request.getFechaCierre() == null) {
-            throw new BusinessRuleException( "Las fechas de inicio y cierre son obligatorias.");
+            throw new BusinessRuleException("Las fechas de inicio y cierre son obligatorias.");
         }
 
         if (!request.getFechaInicio().isBefore(request.getFechaCierre())) {
-            throw new BusinessRuleException( "La fecha de inicio debe ser anterior a la fecha de cierre.");
+            throw new BusinessRuleException("La fecha de inicio debe ser anterior a la fecha de cierre.");
         }
 
         Usuario vendedor = usuarioRepository.findById(request.getVendedorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Vendedor no encontrado con ID: " + request.getVendedorId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Vendedor no encontrado con ID: " + request.getVendedorId()));
         Producto producto = productoRepository.findById(request.getProductoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + request.getProductoId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Producto no encontrado con ID: " + request.getProductoId()));
 
+        if (vendedor.getEstado() != EstadoUsuario.ACTIVO) {
+            throw new BusinessRuleException(
+                    "El vendedor está bloqueado o inactivo y no puede crear subastas.",
+                    HttpStatus.FORBIDDEN);
+        }
         Subasta subasta = Subasta.builder()
                 .vendedor(vendedor)
                 .producto(producto)
@@ -116,33 +126,36 @@ public class SubastaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Subasta no encontrada con ID: " + id));
 
         if (request.getPrecioBase() == null || request.getPrecioBase().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessRuleException("El precio base debe ser mayor a cero.");}
+            throw new BusinessRuleException("El precio base debe ser mayor a cero.");
+        }
 
-        if (request.getIncrementoMinimoPuja() == null || request.getIncrementoMinimoPuja().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessRuleException("El incremento mínimo debe ser mayor a cero.");}
+        if (request.getIncrementoMinimoPuja() == null
+                || request.getIncrementoMinimoPuja().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("El incremento mínimo debe ser mayor a cero.");
+        }
 
         if (request.getFechaInicio() == null || request.getFechaCierre() == null) {
-            throw new BusinessRuleException( "Las fechas de inicio y cierre son obligatorias.");}
+            throw new BusinessRuleException("Las fechas de inicio y cierre son obligatorias.");
+        }
 
         if (!request.getFechaInicio().isBefore(request.getFechaCierre())) {
-            throw new BusinessRuleException("La fecha de inicio debe ser anterior a la fecha de cierre.");}
+            throw new BusinessRuleException("La fecha de inicio debe ser anterior a la fecha de cierre.");
+        }
 
         // VALIDAR QUE EL USUARIO ES EL VENDEDOR
         if (!subasta.getVendedor().getId().equals(usuarioId)) {
-        throw new BusinessRuleException(
-            "Solo el vendedor puede actualizar una subasta", 
-            HttpStatus.FORBIDDEN
-        );
-    }
+            throw new BusinessRuleException(
+                    "Solo el vendedor puede actualizar una subasta",
+                    HttpStatus.FORBIDDEN);
+        }
 
         // VALIDAR QUE NO HAYA PUJAS (no se puede cambiar precio si hay pujas)
         long pujaCount = pujaRepository.countBySubastaId(id);
         if (pujaCount > 0) {
             throw new BusinessRuleException(
-                "No se puede actualizar una subasta que ya tiene pujas"
-            );
+                    "No se puede actualizar una subasta que ya tiene pujas");
         }
-        
+
         subasta.setPrecioBase(request.getPrecioBase());
         subasta.setIncrementoMinimoPuja(request.getIncrementoMinimoPuja());
         subasta.setTitulo(request.getTitulo());
@@ -168,7 +181,8 @@ public class SubastaService {
             notificacionService.sendNotification(subasta.getGanador().getId(), subasta.getId(),
                     TipoNotificacion.GANADOR, "¡Felicidades! Has ganado la subasta: " + subasta.getTitulo());
             notificacionService.sendNotification(subasta.getVendedor().getId(), subasta.getId(),
-                    TipoNotificacion.VENDEDOR, "Tu subasta '" + subasta.getTitulo() + "' ha sido adjudicada a " + subasta.getGanador().getUsername());
+                    TipoNotificacion.VENDEDOR, "Tu subasta '" + subasta.getTitulo() + "' ha sido adjudicada a "
+                            + subasta.getGanador().getUsername());
         } else {
             subasta.setEstado(EstadoSubasta.FINALIZADA);
             subastaRepository.save(subasta);
@@ -203,27 +217,28 @@ public class SubastaService {
             historialEstadoRepository.save(historial);
 
             notificacionService.sendNotification(subasta.getVendedor().getId(), subasta.getId(),
-                    TipoNotificacion.VENDEDOR, "Tu subasta '" + subasta.getTitulo() + "' ha finalizado por expiración de tiempo.");
+                    TipoNotificacion.VENDEDOR,
+                    "Tu subasta '" + subasta.getTitulo() + "' ha finalizado por expiración de tiempo.");
 
             if (subasta.getGanador() != null) {
                 notificacionService.sendNotification(subasta.getGanador().getId(), subasta.getId(),
-                        TipoNotificacion.GANADOR, "La subasta '" + subasta.getTitulo() + "' en la que participaste ha finalizado.");
+                        TipoNotificacion.GANADOR,
+                        "La subasta '" + subasta.getTitulo() + "' en la que participaste ha finalizado.");
             }
         }
     }
 
-    @Scheduled(fixedRate = 30000)  // Cada 30 segundos
+    @Scheduled(fixedRate = 30000) // Cada 30 segundos
     @Transactional
     public void activarSubastasDebidas() {
         LocalDateTime now = LocalDateTime.now();
         List<Subasta> porActivar = subastaRepository.findByEstadoAndFechaInicioBeforeOrEqual(
-            EstadoSubasta.PUBLICADA, now
-        );
-        
+                EstadoSubasta.PUBLICADA, now);
+
         for (Subasta subasta : porActivar) {
             subasta.setEstado(EstadoSubasta.ACTIVA);
             subastaRepository.save(subasta);
-            
+
             HistorialEstado historial = HistorialEstado.builder()
                     .subasta(subasta)
                     .usuarioResponsable(subasta.getVendedor())
@@ -232,13 +247,12 @@ public class SubastaService {
                     .motivo("Activación automática por inicio de tiempo")
                     .build();
             historialEstadoRepository.save(historial);
-            
+
             notificacionService.sendNotification(
-                subasta.getVendedor().getId(),
-                subasta.getId(),
-                TipoNotificacion.SISTEMA,
-                "Tu subasta '" + subasta.getTitulo() + "' ahora está activa"
-            );
+                    subasta.getVendedor().getId(),
+                    subasta.getId(),
+                    TipoNotificacion.SISTEMA,
+                    "Tu subasta '" + subasta.getTitulo() + "' ahora está activa");
         }
     }
 
@@ -246,40 +260,38 @@ public class SubastaService {
     public void cancelAuction(Long id, String motivo, Long usuarioId, RolUsuario rolUsuario) {
         Subasta subasta = subastaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Subasta no encontrada con ID: " + id));
-        
+
         // Validar que no está en estado terminal
-        if (subasta.getEstado() == EstadoSubasta.CANCELADA || 
-            subasta.getEstado() == EstadoSubasta.FINALIZADA || 
-            subasta.getEstado() == EstadoSubasta.ADJUDICADA) {
+        if (subasta.getEstado() == EstadoSubasta.CANCELADA ||
+                subasta.getEstado() == EstadoSubasta.FINALIZADA ||
+                subasta.getEstado() == EstadoSubasta.ADJUDICADA) {
             throw new BusinessRuleException("No se puede cancelar una subasta que ya está finalizada");
         }
-        
+
         // Contar pujas
         long pujasCount = pujaRepository.countBySubastaId(id);
-        
+
         if (pujasCount > 0) {
             // Solo admin puede cancelar con pujas
             if (rolUsuario != RolUsuario.ROLE_ADMIN) {
                 throw new BusinessRuleException(
-                    "Solo un administrador puede cancelar una subasta con pujas", 
-                    HttpStatus.FORBIDDEN
-                );
+                        "Solo un administrador puede cancelar una subasta con pujas",
+                        HttpStatus.FORBIDDEN);
             }
         } else {
             // Si sin pujas, solo vendedor propietario puede cancelar
             if (!subasta.getVendedor().getId().equals(usuarioId)) {
                 throw new BusinessRuleException(
-                    "Solo el vendedor propietario puede cancelar una subasta sin pujas", 
-                    HttpStatus.FORBIDDEN
-                );
+                        "Solo el vendedor propietario puede cancelar una subasta sin pujas",
+                        HttpStatus.FORBIDDEN);
             }
         }
-        
+
         // Cambiar estado
         EstadoSubasta estadoAnterior = subasta.getEstado();
         subasta.setEstado(EstadoSubasta.CANCELADA);
         subastaRepository.save(subasta);
-        
+
         // Registrar en historial
         Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow();
         HistorialEstado historial = HistorialEstado.builder()
@@ -290,16 +302,14 @@ public class SubastaService {
                 .motivo(motivo)
                 .build();
         historialEstadoRepository.save(historial);
-        
+
         // Notificar
         notificacionService.sendNotification(
-            subasta.getVendedor().getId(), 
-            id,
-            TipoNotificacion.SISTEMA, 
-            "Tu subasta '" + subasta.getTitulo() + "' ha sido cancelada"
-        );
+                subasta.getVendedor().getId(),
+                id,
+                TipoNotificacion.SISTEMA,
+                "Tu subasta '" + subasta.getTitulo() + "' ha sido cancelada");
     }
-
 
     private SubastaResponseDTO mapToResponse(Subasta subasta) {
         long count = pujaRepository.countBySubastaId(subasta.getId());
@@ -312,7 +322,8 @@ public class SubastaService {
                 .ganadorId(subasta.getGanador() != null ? subasta.getGanador().getId() : null)
                 .ganadorUsername(subasta.getGanador() != null ? subasta.getGanador().getUsername() : null)
                 .ganadorActualId(subasta.getGanadorActual() != null ? subasta.getGanadorActual().getId() : null)
-                .ganadorActualUsername(subasta.getGanadorActual() != null ? subasta.getGanadorActual().getUsername() : null)
+                .ganadorActualUsername(
+                        subasta.getGanadorActual() != null ? subasta.getGanadorActual().getUsername() : null)
                 .precioBase(subasta.getPrecioBase())
                 .precioFinal(subasta.getPrecioFinal())
                 .fechaCreacion(subasta.getFechaCreacion())
