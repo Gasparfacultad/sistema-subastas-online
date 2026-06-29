@@ -115,6 +115,7 @@ public class SubastaController {
     }
     
     @PostMapping("/{id}/cancelar")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<Void> cancelAuction(
         @PathVariable Long id,
         @RequestParam String motivo,

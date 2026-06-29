@@ -235,7 +235,10 @@ public class SubastaService {
         List<Subasta> expiradas = subastaRepository.findByEstadoAndFechaCierreBeforeOrEqual(EstadoSubasta.ACTIVA, now);
         for (Subasta subasta : expiradas) {
             EstadoSubasta anterior = subasta.getEstado();
-            subasta.setEstado(EstadoSubasta.FINALIZADA);
+            
+            EstadoSubasta nuevoEstado = (subasta.getGanadorActual() != null) ? EstadoSubasta.ADJUDICADA : EstadoSubasta.FINALIZADA;
+            subasta.setEstado(nuevoEstado);
+
             if (subasta.getGanadorActual() != null) {
                 subasta.setGanador(subasta.getGanadorActual());
                 subasta.setPrecioFinal(subasta.getMontoActual());
