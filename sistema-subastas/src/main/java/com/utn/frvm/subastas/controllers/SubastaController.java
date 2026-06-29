@@ -42,7 +42,7 @@ public class SubastaController {
             @ApiResponse(responseCode = "404", description = "Vendedor o Producto no encontrado")
     })
 
-    @PreAuthorize("hasRole('ROLE_SELLER')")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<SubastaResponseDTO> create(@Valid @RequestBody SubastaRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(subastaService.create(request));
     }
@@ -83,7 +83,7 @@ public class SubastaController {
             @ApiResponse(responseCode = "404", description = "Subasta no encontrada")
     })
 
-    @PreAuthorize("hasRole('ROLE_SELLER')")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<Void> update(@PathVariable Long id, @Valid @RequestBody SubastaRequestDTO request, Authentication authentication) {
         Long usuarioId = extractUserIdFromAuthentication(authentication);
         subastaService.update(id, request, usuarioId);
@@ -107,9 +107,10 @@ public class SubastaController {
             @ApiResponse(responseCode = "404", description = "Subasta no encontrada")
     })
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Void> closeAuction(@PathVariable Long id) {
-        subastaService.closeAuction(id);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> closeAuction(@PathVariable Long id, Authentication authentication) {
+        Long adminId = extractUserIdFromAuthentication(authentication);
+        subastaService.closeAuction(id, adminId);
         return ResponseEntity.ok().build();
     }
     

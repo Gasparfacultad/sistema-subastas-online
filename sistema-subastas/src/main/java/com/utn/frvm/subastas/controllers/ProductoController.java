@@ -42,7 +42,7 @@ public class ProductoController {
             @ApiResponse(responseCode = "404", description = "Categoría o Vendedor no encontrado")
     })
 
-    @PreAuthorize("hasRole('ROLE_SELLER')")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ProductoResponseDTO> create(@Valid @RequestBody ProductoRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productoService.create(request));
     }
@@ -83,7 +83,7 @@ public class ProductoController {
             @ApiResponse(responseCode = "404", description = "Producto o Categoría no encontrados")
     })
 
-    @PreAuthorize("hasRole('ROLE_SELLER')")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<Void> update(@PathVariable Long id, @Valid @RequestBody ProductoRequestDTO request, Authentication authentication) {
         // Extraer el ID del usuario autenticado
         Long usuarioId = extractUserIdFromAuthentication(authentication);
@@ -100,7 +100,7 @@ public class ProductoController {
         }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_SELLER')")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<Void> delete( @PathVariable Long id, Authentication authentication) {
         
         Long usuarioId = extractUserIdFromAuthentication(authentication);

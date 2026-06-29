@@ -5,7 +5,7 @@ import com.utn.frvm.subastas.dtos.DisputaResponseDTO;
 import com.utn.frvm.subastas.dtos.HistorialIncidenciaResponseDTO;
 import com.utn.frvm.subastas.entities.HistorialIncidencia;
 import com.utn.frvm.subastas.entities.Disputa;
-
+import com.utn.frvm.subastas.entities.HistorialEstado;
 import com.utn.frvm.subastas.entities.Subasta;
 import com.utn.frvm.subastas.entities.Usuario;
 import com.utn.frvm.subastas.enums.EstadoDisputa;
@@ -15,6 +15,7 @@ import com.utn.frvm.subastas.enums.RolUsuario;
 import com.utn.frvm.subastas.exceptions.BusinessRuleException;
 import com.utn.frvm.subastas.exceptions.ResourceNotFoundException;
 import com.utn.frvm.subastas.repositories.DisputaRepository;
+import com.utn.frvm.subastas.repositories.HistorialEstadoRepository;
 import com.utn.frvm.subastas.repositories.HistorialIncidenciaRepository;
 import com.utn.frvm.subastas.repositories.SubastaRepository;
 import com.utn.frvm.subastas.repositories.UsuarioRepository;
@@ -30,17 +31,19 @@ import java.util.stream.Collectors;
 @Service
 public class DisputaService {
 
+    private final HistorialEstadoRepository historialEstadoRepository;
     private final DisputaRepository disputaRepository;
     private final SubastaRepository subastaRepository;
     private final UsuarioRepository usuarioRepository;
     private final HistorialIncidenciaRepository historialIncidenciaRepository;
 
     public DisputaService(DisputaRepository disputaRepository, SubastaRepository subastaRepository,
-            UsuarioRepository usuarioRepository, HistorialIncidenciaRepository historialIncidenciaRepository) {
+            UsuarioRepository usuarioRepository, HistorialIncidenciaRepository historialIncidenciaRepository, HistorialEstadoRepository historialEstadoRepository) {
         this.disputaRepository = disputaRepository;
         this.subastaRepository = subastaRepository;
         this.usuarioRepository = usuarioRepository;
         this.historialIncidenciaRepository = historialIncidenciaRepository;
+        this.historialEstadoRepository = historialEstadoRepository;
     }
 
     @Transactional
@@ -110,6 +113,8 @@ public class DisputaService {
         disputa.setFechaResolucion(LocalDateTime.now());
 
         Subasta subasta = disputa.getSubasta();
+        EstadoSubasta estadoAnterior = subasta.getEstado();
+        
         if (resolucion == EstadoDisputa.RESUELTA_FAVOR_USER) {
             subasta.setEstado(EstadoSubasta.CANCELADA);
         } else {
@@ -117,10 +122,26 @@ public class DisputaService {
         }
         subastaRepository.save(subasta);
 
-        Usuario perdedor = (resolucion == EstadoDisputa.RESUELTA_FAVOR_USER) ? subasta.getVendedor()
-                : disputa.getIniciador();
-        perdedor.setIncidenciasAcumuladas(perdedor.getIncidenciasAcumuladas() + 1);
+        HistorialEstado historial = HistorialEstado.builder()
+            .subasta(subasta)
+            .usuarioResponsable(admin)
+            .estadoAnterior(estadoAnterior)
+            .estadoNuevo(subasta.getEstado())
+            .motivo("Resolución administrativa de disputa #" + disputa.getId())
+            .build();
+        historialEstadoRepository.save(historial);
 
+        Usuario perdedor;
+        if (resolucion == EstadoDisputa.RESUELTA_FAVOR_USER) {
+            perdedor = subasta.getVendedor();
+        } else {
+            // Protección: si la subasta no tiene ganador asignado, no acumular incidencia
+            if (subasta.getGanador() == null) {
+                return mapToResponse(disputaRepository.save(disputa));
+            }
+            perdedor = subasta.getGanador();
+        }
+        perdedor.setIncidenciasAcumuladas(perdedor.getIncidenciasAcumuladas() + 1);
         if (perdedor.getIncidenciasAcumuladas() >= 3) {
             perdedor.setEstado(EstadoUsuario.BLOQUEADO);
             perdedor.setBloqueadoPor(admin);
@@ -128,14 +149,12 @@ public class DisputaService {
             perdedor.setMotivoBloqueo("Acumulación de 3 incidencias.");
         }
         usuarioRepository.save(perdedor);
-
         HistorialIncidencia incidencia = HistorialIncidencia.builder()
                 .usuario(perdedor)
                 .disputa(disputa)
                 .motivoPenalizacion("Disputa resuelta en su contra.")
                 .build();
         historialIncidenciaRepository.save(incidencia);
-
         return mapToResponse(disputaRepository.save(disputa));
     }
 
@@ -150,26 +169,28 @@ public class DisputaService {
         return mapToResponse(disputa);
     }
 
+    @Transactional(readOnly = true)
     public DisputaResponseDTO getById(Long id) {
         Disputa disputa = disputaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Disputa no encontrada con ID: " + id));
         return mapToResponse(disputa);
     }
 
+    @Transactional(readOnly = true)
     public List<DisputaResponseDTO> getDisputesByEstado(EstadoDisputa estado) {
         return disputaRepository.findByEstado(estado).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<DisputaResponseDTO> getDisputesByAdmin(Long adminId) {
         return disputaRepository.findByAdminResolutorId(adminId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // Requiere inyectar HistorialIncidenciaRepository (ya está disponible en
-    // DisputaService)
+    @Transactional(readOnly = true)
     public List<HistorialIncidenciaResponseDTO> getIncidenciasByUsuario(Long usuarioId) {
         return historialIncidenciaRepository.findByUsuarioId(usuarioId)
                 .stream()

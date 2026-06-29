@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +29,8 @@ public class NotificacionController {
             @ApiResponse(responseCode = "200", description = "Lista de notificaciones obtenida exitosamente"),
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
+    
+    @PreAuthorize("authentication.name == @usuarioService.getById(#usuarioId).username or hasRole('ADMIN')")
     public ResponseEntity<List<NotificacionResponseDTO>> getUnreadNotifications(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(notificacionService.getUnreadNotifications(usuarioId));
     }

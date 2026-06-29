@@ -96,7 +96,16 @@ public class SubastaService {
                 .estado(request.getEstado())
                 .build();
 
-        return mapToResponse(subastaRepository.save(subasta));
+        Subasta savedSubasta = subastaRepository.save(subasta);
+        HistorialEstado historial = HistorialEstado.builder()
+                .subasta(savedSubasta)
+                .usuarioResponsable(vendedor)
+                .estadoAnterior(null)
+                .estadoNuevo(request.getEstado())
+                .motivo("Creación inicial de la subasta")
+                .build();
+        historialEstadoRepository.save(historial);
+        return mapToResponse(savedSubasta);
     }
 
     @Transactional(readOnly = true)
@@ -156,6 +165,9 @@ public class SubastaService {
                     "No se puede actualizar una subasta que ya tiene pujas");
         }
 
+        EstadoSubasta estadoAnterior = subasta.getEstado();
+        EstadoSubasta estadoNuevo = request.getEstado();
+
         subasta.setPrecioBase(request.getPrecioBase());
         subasta.setIncrementoMinimoPuja(request.getIncrementoMinimoPuja());
         subasta.setTitulo(request.getTitulo());
@@ -164,12 +176,28 @@ public class SubastaService {
         subasta.setFechaCierre(request.getFechaCierre());
         subasta.setEstado(request.getEstado());
         subastaRepository.save(subasta);
+
+        if (estadoAnterior != estadoNuevo) {
+            HistorialEstado historial = HistorialEstado.builder()
+                    .subasta(subasta)
+                    .usuarioResponsable(subasta.getVendedor())
+                    .estadoAnterior(estadoAnterior)
+                    .estadoNuevo(estadoNuevo)
+                    .motivo("Actualización del estado de la subasta.")
+                    .build();
+            historialEstadoRepository.save(historial);
+        }
     }
 
     @Transactional
-    public void closeAuction(Long id) {
+    public void closeAuction(Long id, Long adminId) {
         Subasta subasta = subastaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Subasta no encontrada con ID: " + id));
+
+        Usuario admin = usuarioRepository.findById(adminId)
+            .orElseThrow(() -> new ResourceNotFoundException("Administrador no encontrado"));
+        EstadoSubasta estadoAnterior = subasta.getEstado();
+        EstadoSubasta estadoNuevo = (subasta.getGanadorActual() != null) ? EstadoSubasta.ADJUDICADA : EstadoSubasta.FINALIZADA;
 
         if (subasta.getGanadorActual() != null) {
             subasta.setEstado(EstadoSubasta.ADJUDICADA);
@@ -190,6 +218,14 @@ public class SubastaService {
             notificacionService.sendNotification(subasta.getVendedor().getId(), subasta.getId(),
                     TipoNotificacion.VENDEDOR, "Tu subasta '" + subasta.getTitulo() + "' ha finalizado sin ofertas.");
         }
+        HistorialEstado historial = HistorialEstado.builder()
+            .subasta(subasta)
+            .usuarioResponsable(admin)
+            .estadoAnterior(estadoAnterior)
+            .estadoNuevo(estadoNuevo)
+            .motivo("Cierre manual por parte de un administrador")
+            .build();
+        historialEstadoRepository.save(historial);
     }
 
     @Scheduled(fixedRate = 60000)

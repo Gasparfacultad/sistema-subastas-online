@@ -29,13 +29,14 @@ public class PujaService {
     private final PujaRepository pujaRepository;
     private final SubastaRepository subastaRepository;
     private final UsuarioRepository usuarioRepository;
-    private UsuarioService usuarioService;
+    private final UsuarioService usuarioService;
 
-    public PujaService(PujaRepository pujaRepository, SubastaRepository subastaRepository, UsuarioRepository usuarioRepository, NotificacionService notificacionService) {
+    public PujaService(PujaRepository pujaRepository, SubastaRepository subastaRepository, UsuarioRepository usuarioRepository, NotificacionService notificacionService, UsuarioService usuarioService) {
         this.pujaRepository = pujaRepository;
         this.subastaRepository = subastaRepository;
         this.usuarioRepository = usuarioRepository;
         this.notificacionService = notificacionService;
+        this.usuarioService = usuarioService;
     }
 
     @Transactional
@@ -65,9 +66,18 @@ public class PujaService {
             throw new BusinessRuleException("La subasta no está activa.");
         }
 
-        BigDecimal threshold = subasta.getMontoActual().add(subasta.getIncrementoMinimoPuja());
-        if (dto.getMonto().compareTo(threshold) <= 0) {
-            throw new BusinessRuleException("El monto de la puja debe ser estrictamente mayor a " + threshold);
+        long countPujas = pujaRepository.countBySubastaId(subasta.getId());
+        if (countPujas == 0) {
+            // Primera puja: mayor o igual al precio base
+            if (dto.getMonto().compareTo(subasta.getPrecioBase()) < 0) {
+                throw new BusinessRuleException("La primera puja debe ser mayor o igual al precio base: $" + subasta.getPrecioBase());
+            }
+        } else {
+            // Siguientes pujas: mayor o igual a montoActual + incrementoMinimo
+            BigDecimal threshold = subasta.getMontoActual().add(subasta.getIncrementoMinimoPuja());
+            if (dto.getMonto().compareTo(threshold) < 0) {
+                throw new BusinessRuleException("El monto de la puja debe ser mayor o igual a " + threshold);
+            }
         }
         // GUARDAR EL GANADOR ANTERIOR (si existe)
         Usuario ganadorAnterior = subasta.getGanadorActual();

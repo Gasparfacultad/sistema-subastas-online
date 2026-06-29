@@ -40,7 +40,7 @@ public class PujaController {
             @ApiResponse(responseCode = "404", description = "Subasta o Comprador no encontrado")
     })
 
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<PujaResponseDTO> placeBid(@Valid @RequestBody PujaRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pujaService.placeBid(request));
     }

@@ -51,6 +51,7 @@ public class NotificacionService {
         notificacionRepository.save(notificacion);
     }
 
+    @Transactional(readOnly = true)
     public List<NotificacionResponseDTO> getUnreadNotifications(Long usuarioId) {
         if (!usuarioRepository.existsById(usuarioId)) {
             throw new ResourceNotFoundException("Usuario no encontrado con ID: " + usuarioId);

@@ -23,18 +23,21 @@ public class UsuarioService {
         this.usuarioRepository = usuarioRepository;
     }
 
+    @Transactional(readOnly = true)
     public UsuarioResponseDTO getById(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
         return mapToResponse(usuario);
     }
 
+    @Transactional(readOnly = true)
     public UsuarioResponseDTO getByUsername(String username) {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con username: " + username));
         return mapToResponse(usuario);
     }
 
+    @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> getAll() {
         return usuarioRepository.findAll().stream()
                 .map(this::mapToResponse)
