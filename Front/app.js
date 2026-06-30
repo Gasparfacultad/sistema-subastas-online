@@ -664,6 +664,7 @@ function renderAuctionDetail() {
                 </div>
             `;
         } else if (isSellerOfAuction) {
+            const hasBids = bids.length > 0 || (auc.cantidadPujas && auc.cantidadPujas > 0) || (auc.montoActual && auc.montoActual > 0);
             sidebarHtml = `
                 <div class="place-bid-card">
                     <div class="place-bid-title">Estado de tu Subasta</div>
@@ -671,12 +672,21 @@ function renderAuctionDetail() {
                         $${currentPrice.toLocaleString()}
                         <span>Monto Actual</span>
                     </div>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
-                        Como vendedor, no puedes auto-ofertar. Puedes forzar el cierre anticipado de la subasta.
-                    </p>
-                    <button class="btn btn-danger" style="width:100%" onclick="closeAuctionManual(${auc.id})">
-                        <i class="fa-solid fa-lock"></i> Cerrar Subasta Ahora
-                    </button>
+                    ${hasBids ? `
+                        <p style="color: var(--warning); font-size: 0.9rem; margin-bottom: 1.5rem; font-weight: 500;">
+                            <i class="fa-solid fa-circle-info"></i> Esta subasta ya tiene ofertas. Solo un administrador puede forzar su cierre.
+                        </p>
+                        <button class="btn btn-secondary" style="width:100%; opacity: 0.6; cursor: not-allowed;" title="No permitido por tener pujas activas" disabled>
+                            <i class="fa-solid fa-lock"></i> Cerrar Subasta Bloqueado
+                        </button>
+                    ` : `
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                            Como vendedor, no puedes auto-ofertar. Puedes cerrar la subasta ya que no tiene ofertas.
+                        </p>
+                        <button class="btn btn-danger" style="width:100%" onclick="closeAuctionManual(${auc.id})">
+                            <i class="fa-solid fa-lock"></i> Cerrar Subasta Ahora
+                        </button>
+                    `}
                 </div>
             `;
         } else if (isBuyer) {
@@ -899,19 +909,30 @@ async function handlePlaceBid(event) {
 }
 
 async function closeAuctionManual(id) {
-    if (!confirm('¿Estás seguro de que deseas cerrar esta subasta manualmente?')) return;
+    const isSeller = state.user && state.user.rol === 'ROLE_SELLER';
+    let url = `/api/subastas/${id}/cerrar`;
+    let options = { method: 'POST' };
+    
+    if (isSeller) {
+        const motivo = prompt('Ingrese el motivo del cierre/cancelación de la subasta:', 'Cierre manual por el vendedor');
+        if (motivo === null) return;
+        url = `/api/subastas/${id}/cancelar?motivo=${encodeURIComponent(motivo)}`;
+    } else {
+        if (!confirm('¿Estás seguro de que deseas forzar el cierre de esta subasta manualmente?')) return;
+    }
     
     try {
-        const response = await apiCall(`/api/subastas/${id}/cerrar`, { method: 'POST' });
+        const response = await apiCall(url, options);
         if (response.ok) {
-            showToast('Subasta cerrada con éxito.', 'success');
+            showToast(isSeller ? 'Subasta cancelada/cerrada con éxito.' : 'Subasta cerrada con éxito.', 'success');
             if (state.activeView === 'detail') {
                 await loadAuctionDetailData();
             } else if (state.activeView === 'seller') {
                 await loadSellerPanel();
             }
         } else {
-            showToast('Error al cerrar la subasta.', 'error');
+            const errMsg = await getErrorMessage(response, 'Error al cerrar la subasta.');
+            showToast(errMsg, 'error');
         }
     } catch(e) {
         console.error(e);
@@ -1066,11 +1087,17 @@ function renderSellerAuctions() {
                                 <i class="fa-solid fa-edit"></i>
                             </button>
                         ` : ''}
-                        ${a.estado === 'ACTIVA' ? `
-                            <button class="btn btn-danger btn-sm" onclick="closeAuctionManual(${a.id})" title="Cerrar subasta">
-                                <i class="fa-solid fa-lock"></i>
-                            </button>
-                        ` : ''}
+                        ${a.estado === 'ACTIVA' ? (
+                            ((a.cantidadPujas && a.cantidadPujas > 0) || (a.montoActual && a.montoActual > a.precioBase)) ? `
+                                <button class="btn btn-secondary btn-sm" style="opacity: 0.5; cursor: not-allowed;" title="Esta subasta tiene pujas. Solo un admin puede cerrarla." disabled>
+                                    <i class="fa-solid fa-lock"></i>
+                                </button>
+                            ` : `
+                                <button class="btn btn-danger btn-sm" onclick="closeAuctionManual(${a.id})" title="Cerrar subasta">
+                                    <i class="fa-solid fa-lock"></i>
+                                </button>
+                            `
+                        ) : ''}
                     </div>
                 </td>
             </tr>
