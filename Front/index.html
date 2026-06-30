@@ -113,29 +113,9 @@
         <section id="view-catalog" class="view">
             <div class="section-header">
                 <div>
-                    <h1>Subastas Activas</h1>
+                    <h1>Subastas Disponibles</h1>
                     <p>Encuentra y oferta por productos en tiempo real</p>
                 </div>
-            </div>
-
-            <div class="filters-bar">
-                <div class="search-input-wrapper">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="catalog-search" class="form-control" placeholder="Buscar por título..." oninput="filterCatalog()">
-                </div>
-                <select id="catalog-filter-category" class="form-control filter-select" onchange="filterCatalog()">
-                    <option value="">Todas las Categorías</option>
-                    
-                </select>
-                <select id="catalog-filter-state" class="form-control filter-select" onchange="filterCatalog()">
-                    <option value="ACTIVA">Subastas Activas</option>
-                    <option value="PUBLICADA">Subastas Publicadas (No iniciadas)</option>
-                    <option value="FINALIZADA">Finalizadas / Cerradas</option>
-                    <option value="ADJUDICADA">Adjudicadas</option>
-                    <option value="EN_DISPUTA">En Disputa</option>
-                    <option value="BORRADOR">Borradores</option>
-                    <option value="ALL">Ver Todas</option>
-                </select>
                 <button class="btn btn-secondary" onclick="loadCatalog()"><i class="fa-solid fa-arrows-rotate"></i> Actualizar</button>
             </div>
 
@@ -415,7 +395,7 @@
                         </div>
                         <div class="form-group">
                             <label for="product-state">Estado</label>
-                            <select id="product-state" class="form-control" required>
+                            <select id="product-state" class="form-control" disabled required>
                                 <option value="ACTIVO">Activo (Disponible para subastar)</option>
                                 <option value="INACTIVO">Inactivo</option>
                             </select>
@@ -450,7 +430,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="auction-product">Seleccionar Producto</label>
-                            <select id="auction-product" class="form-control" required>
+                            <select id="auction-product" class="form-control" onchange="updateAuctionFormFieldsFromProduct()" required>
                                 
                             </select>
                         </div>

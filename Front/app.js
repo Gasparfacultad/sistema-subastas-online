@@ -354,49 +354,50 @@ function populateCategoryDropdowns() {
     const catalogCatSelect = document.getElementById('catalog-filter-category');
     const prodCatSelect = document.getElementById('product-category');
     
-    catalogCatSelect.innerHTML = '<option value="">Todas las Categorías</option>';
-    prodCatSelect.innerHTML = '';
+    if (catalogCatSelect) {
+        catalogCatSelect.innerHTML = '<option value="">Todas las Categorías</option>';
+    }
+    if (prodCatSelect) {
+        prodCatSelect.innerHTML = '';
+    }
     
     state.categories.forEach(cat => {
-        catalogCatSelect.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`;
-        prodCatSelect.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`;
+        if (catalogCatSelect) {
+            catalogCatSelect.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`;
+        }
+        if (prodCatSelect) {
+            prodCatSelect.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`;
+        }
     });
 }
 
 async function loadCatalog() {
     try {
-        let endpoint = '/api/subastas';
-        const selectState = state.catalogSelectedState;
-
-        if (selectState && selectState !== 'ALL') {
-            endpoint = `/api/subastas/estado/${selectState}`;
+        const [resActiva, resPublicada] = await Promise.all([
+            apiCall('/api/subastas/estado/ACTIVA', { method: 'GET' }),
+            apiCall('/api/subastas/estado/PUBLICADA', { method: 'GET' })
+        ]);
+        
+        let auctionsActivas = [];
+        let auctionsPublicadas = [];
+        
+        if (resActiva.ok) {
+            auctionsActivas = await resActiva.json();
+        }
+        if (resPublicada.ok) {
+            auctionsPublicadas = await resPublicada.json();
         }
         
-        const response = await apiCall(endpoint, { method: 'GET' });
-        
-        if (response.ok) {
-            state.auctions = await response.json();
-            filterCatalog();
-        } else {
-            showToast('Error al cargar subastas del catálogo.', 'error');
-        }
+        state.auctions = [...auctionsActivas, ...auctionsPublicadas];
+        filterCatalog();
     } catch (e) {
         console.error(e);
+        showToast('Error al cargar subastas del catálogo.', 'error');
     }
 }
 
 function filterCatalog() {
-    const searchVal = document.getElementById('catalog-search').value.toLowerCase().trim();
-    const catVal = document.getElementById('catalog-filter-category').value;
-    
-    const filtered = state.auctions.filter(auc => {
-        const matchesSearch = auc.titulo.toLowerCase().includes(searchVal) || 
-                              (auc.descripcion && auc.descripcion.toLowerCase().includes(searchVal));
-        const matchesCategory = !catVal || (auc.producto && auc.producto.categoriaId === parseInt(catVal));
-        return matchesSearch && matchesCategory;
-    });
-    
-    renderCatalogGrid(filtered);
+    renderCatalogGrid(state.auctions);
 }
 
 function renderCatalogGrid(items) {
@@ -1478,6 +1479,19 @@ async function handleProductSubmit(event) {
     }
 }
 
+function updateAuctionFormFieldsFromProduct() {
+    const isEdit = !!document.getElementById('auction-id').value;
+    if (isEdit) return;
+
+    const productSelect = document.getElementById('auction-product');
+    const productId = parseInt(productSelect.value);
+    const prod = state.products.find(p => p.id === productId);
+    if (prod) {
+        document.getElementById('auction-title').value = prod.nombre;
+        document.getElementById('auction-description').value = prod.descripcion || '';
+    }
+}
+
 async function openCreateAuctionModal() {
     document.getElementById('form-auction').reset();
     document.getElementById('auction-id').value = '';
@@ -1502,6 +1516,8 @@ async function openCreateAuctionModal() {
     activeProducts.forEach(p => {
         productSelect.innerHTML += `<option value="${p.id}">${p.nombre} (ID: ${p.id})</option>`;
     });
+    
+    updateAuctionFormFieldsFromProduct();
     
     openModal('modal-auction');
 }
