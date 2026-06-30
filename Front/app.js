@@ -421,11 +421,14 @@ function renderCatalogGrid(items) {
         const timeBadge = getAuctionTimeRemainingBadge(auc);
         const stateBadge = getAuctionStateBadge(auc.estado);
         const finalPrice = auc.montoActual || auc.precioBase;
+        const catName = auc.producto 
+            ? (state.categories.find(c => c.id === auc.producto.categoriaId)?.nombre || 'General') 
+            : 'General';
         
         grid.innerHTML += `
             <div class="auction-card">
                 <div class="card-header">
-                    <span class="badge badge-default">${auc.producto ? auc.producto.categoriaNombre || 'General' : 'General'}</span>
+                    <span class="badge badge-default">${catName}</span>
                     ${stateBadge}
                 </div>
                 <div class="card-body">
@@ -460,7 +463,7 @@ function getAuctionTimeRemainingBadge(auc) {
     }
     
     if (auc.estado === 'ACTIVA') {
-        const timeDiff = new Date(auc.fechaCierre) - new Date();
+        const timeDiff = parseBackendDate(auc.fechaCierre) - new Date();
         if (timeDiff <= 0) {
             return `<span class="time-remaining critical"><i class="fa-solid fa-clock"></i> Expirada</span>`;
         }
@@ -581,12 +584,15 @@ function renderAuctionDetail() {
     const stateBadge = getAuctionStateBadge(auc.estado);
     const startStr = formatDate(auc.fechaInicio);
     const endStr = formatDate(auc.fechaCierre);
+    const catName = auc.producto 
+        ? (state.categories.find(c => c.id === auc.producto.categoriaId)?.nombre || 'Categoría General') 
+        : 'General';
 
     let mainHtml = `
         <div class="detail-main">
             <div class="detail-header">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="badge badge-primary">${auc.producto ? auc.producto.categoriaNombre || 'Categoría General' : 'General'}</span>
+                    <span class="badge badge-primary">${catName}</span>
                     ${stateBadge}
                 </div>
                 <h1 class="detail-title">${auc.titulo}</h1>
@@ -807,7 +813,7 @@ function renderAuctionDetail() {
 }
 
 function getDetailCountdownHtmlAndClass(fechaCierre) {
-    const timeDiff = new Date(fechaCierre) - new Date();
+    const timeDiff = parseBackendDate(fechaCierre) - new Date();
     if (timeDiff <= 0) {
         return {
             html: `<i class="fa-solid fa-clock"></i> ¡TIEMPO EXPIRADO!`,
@@ -832,7 +838,7 @@ function updateDetailCountdown() {
     const timerDisplay = document.getElementById('detail-timer-countdown');
     if (!timerDisplay || !state.activeAuction) return;
     
-    const timeDiff = new Date(state.activeAuction.fechaCierre) - new Date();
+    const timeDiff = parseBackendDate(state.activeAuction.fechaCierre) - new Date();
     
     if (timeDiff <= 0) {
         timerDisplay.innerHTML = `<i class="fa-solid fa-clock"></i> ¡TIEMPO EXPIRADO!`;
@@ -880,7 +886,7 @@ async function handlePlaceBid(event) {
             }
         });
         
-        if (response.status === 201) {
+        if (response.ok) {
             showToast('¡Tu puja ha sido registrada con éxito!', 'success');
             await loadAuctionDetailData();
         } else {
@@ -1587,8 +1593,8 @@ async function openEditAuctionModal(id) {
     document.getElementById('auction-description').value = auc.descripcion;
     document.getElementById('auction-price-base').value = auc.precioBase;
     document.getElementById('auction-price-min-increment').value = auc.incrementoMinimoPuja;
-    document.getElementById('auction-date-start').value = formatDateTimeLocal(new Date(auc.fechaInicio));
-    document.getElementById('auction-date-end').value = formatDateTimeLocal(new Date(auc.fechaCierre));
+    document.getElementById('auction-date-start').value = formatDateTimeLocal(parseBackendDate(auc.fechaInicio));
+    document.getElementById('auction-date-end').value = formatDateTimeLocal(parseBackendDate(auc.fechaCierre));
     document.getElementById('auction-state').value = auc.estado;
     
     const productSelect = document.getElementById('auction-product');
@@ -1917,11 +1923,27 @@ async function getErrorMessage(response, defaultMsg) {
     }
 }
 
+function parseBackendDate(dateString) {
+    if (!dateString) return null;
+    if (dateString instanceof Date) return dateString;
+    
+    let normalized = String(dateString).trim().replace(' ', 'T');
+    if (normalized.includes('T') && !normalized.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+        normalized += 'Z';
+    }
+    
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) {
+        return new Date(dateString);
+    }
+    return d;
+}
+
 function formatDate(dateString) {
     if (!dateString) return '-';
     try {
-        const d = new Date(dateString);
-        if (isNaN(d.getTime())) return dateString;
+        const d = parseBackendDate(dateString);
+        if (!d || isNaN(d.getTime())) return dateString;
         return d.toLocaleString('es-AR', {
             day: '2-digit',
             month: '2-digit',
@@ -1942,5 +1964,5 @@ function formatDateTimeLocal(dateObj) {
 
 function formatDateTimeBackend(dateObj) {
     const pad = (n) => String(n).padStart(2, '0');
-    return `${dateObj.getFullYear()}-${pad(dateObj.getMonth()+1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:00`;
+    return `${dateObj.getUTCFullYear()}-${pad(dateObj.getUTCMonth()+1)}-${pad(dateObj.getUTCDate())}T${pad(dateObj.getUTCHours())}:${pad(dateObj.getUTCMinutes())}:00`;
 }
