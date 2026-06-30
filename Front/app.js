@@ -22,7 +22,8 @@ const state = {
     notifications: [],
 
     notificationsInterval: null,
-    auctionTimerInterval: null
+    auctionTimerInterval: null,
+    auctionDetailPollInterval: null
 };
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -155,6 +156,10 @@ function navigateTo(viewId) {
     if (state.auctionTimerInterval) {
         clearInterval(state.auctionTimerInterval);
         state.auctionTimerInterval = null;
+    }
+    if (state.auctionDetailPollInterval) {
+        clearInterval(state.auctionDetailPollInterval);
+        state.auctionDetailPollInterval = null;
     }
 
     // Force redirection to auth view if user is not authenticated
@@ -504,6 +509,16 @@ async function viewAuctionDetail(id) {
             updateDetailCountdown();
         }
     }, 1000);
+
+    if (state.auctionDetailPollInterval) {
+        clearInterval(state.auctionDetailPollInterval);
+    }
+
+    state.auctionDetailPollInterval = setInterval(async () => {
+        if (state.activeView === 'detail' && state.activeAuction && state.activeAuction.estado === 'ACTIVA') {
+            await loadAuctionDetailData();
+        }
+    }, 3000);
 }
 
 async function loadAuctionDetailData() {
@@ -521,7 +536,25 @@ async function loadAuctionDetailData() {
                 state.activeAuctionBids = [];
             }
             
-            renderAuctionDetail();
+            if (state.activeView === 'detail') {
+                const bidInput = document.getElementById('bid-amount');
+                const hasFocus = bidInput && document.activeElement === bidInput;
+                const currentValue = bidInput ? bidInput.value : null;
+                
+                renderAuctionDetail();
+                
+                if (hasFocus) {
+                    const newBidInput = document.getElementById('bid-amount');
+                    if (newBidInput) {
+                        newBidInput.focus();
+                        const currentPrice = state.activeAuction.montoActual || state.activeAuction.precioBase;
+                        const minRequiredBid = currentPrice + state.activeAuction.incrementoMinimoPuja;
+                        if (currentValue && parseFloat(currentValue) >= minRequiredBid) {
+                            newBidInput.value = currentValue;
+                        }
+                    }
+                }
+            }
         } else {
             showToast('No se pudo obtener detalles de la subasta.', 'error');
             navigateTo('catalog');
@@ -641,6 +674,7 @@ function renderAuctionDetail() {
                 </div>
             `;
         } else if (isBuyer) {
+            const countdownInfo = getDetailCountdownHtmlAndClass(auc.fechaCierre);
             sidebarHtml = `
                 <div class="place-bid-card">
                     <div class="place-bid-title">Ofertar por este Producto</div>
@@ -648,8 +682,8 @@ function renderAuctionDetail() {
                         $${currentPrice.toLocaleString()}
                         <span>Monto Actual</span>
                     </div>
-                    <div id="detail-timer-countdown" class="time-remaining critical" style="margin-bottom:1.5rem; font-size:1.1rem; justify-content:center;">
-                        Cargando temporizador...
+                    <div id="detail-timer-countdown" class="time-remaining ${countdownInfo.isCritical ? 'critical' : ''}" style="margin-bottom:1.5rem; font-size:1.1rem; justify-content:center;">
+                        ${countdownInfo.html}
                     </div>
                     
                     <form id="form-place-bid" onsubmit="handlePlaceBid(event)">
@@ -770,6 +804,28 @@ function renderAuctionDetail() {
             ${sidebarHtml}
         </div>
     `;
+}
+
+function getDetailCountdownHtmlAndClass(fechaCierre) {
+    const timeDiff = new Date(fechaCierre) - new Date();
+    if (timeDiff <= 0) {
+        return {
+            html: `<i class="fa-solid fa-clock"></i> ¡TIEMPO EXPIRADO!`,
+            isCritical: true
+        };
+    }
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+    
+    const hoursStr = String(hours).padStart(2, '0');
+    const minutesStr = String(minutes).padStart(2, '0');
+    const secondsStr = String(seconds).padStart(2, '0');
+    
+    return {
+        html: `<i class="fa-solid fa-hourglass-half"></i> Cierre: ${hoursStr}:${minutesStr}:${secondsStr}`,
+        isCritical: timeDiff < (1000 * 60 * 15)
+    };
 }
 
 function updateDetailCountdown() {
@@ -1357,7 +1413,7 @@ function renderNotifications() {
             
         tbody.innerHTML += `
             <tr style="${n.leida ? '' : 'background-color:rgba(0, 242, 254, 0.02)'}">
-                <td><span style="font-size:0.8rem; color:var(--text-muted);">${formatDate(n.fechaEnvio)}</span></td>
+                <td><span style="font-size:0.8rem; color:var(--text-muted);">${formatDate(n.fechaCreacion || n.fecha_creacion || n.fechaEnvio)}</span></td>
                 <td>${typeBadge}</td>
                 <td style="color: ${n.leida ? 'var(--text-default)' : 'var(--text-bright)'}">${n.mensaje}</td>
                 <td>${readStatus}</td>
@@ -1840,18 +1896,20 @@ function showToast(message, type = 'info') {
 async function getErrorMessage(response, defaultMsg) {
     try {
         const cloned = response.clone();
-        const contentType = cloned.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            const errBody = await cloned.json();
-            if (errBody.invalid_params) {
-                const details = Object.entries(errBody.invalid_params)
-                    .map(([field, msg]) => `${field}: ${msg}`)
-                    .join(' | ');
-                return `${errBody.detail || 'Error de validación'}: ${details}`;
+        const text = await cloned.text();
+        
+        try {
+            const errBody = JSON.parse(text);
+            if (errBody && typeof errBody === 'object') {
+                if (errBody.invalid_params) {
+                    const details = Object.entries(errBody.invalid_params)
+                        .map(([field, msg]) => `${field}: ${msg}`)
+                        .join(' | ');
+                    return `${errBody.detail || 'Error de validación'}: ${details}`;
+                }
+                return errBody.detail || errBody.message || errBody.title || defaultMsg;
             }
-            return errBody.detail || errBody.message || defaultMsg;
-        } else {
-            const text = await cloned.text();
+        } catch (jsonErr) {
             return text || defaultMsg;
         }
     } catch (e) {
