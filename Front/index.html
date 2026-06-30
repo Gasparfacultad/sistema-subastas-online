@@ -275,6 +275,8 @@
             <div class="tab-container">
                 <button class="tab-btn active" id="tab-admin-users" onclick="switchAdminTab('users')">Gestión de Usuarios</button>
                 <button class="tab-btn" id="tab-admin-disputes" onclick="switchAdminTab('disputes')">Gestión de Disputas</button>
+                <button class="tab-btn" id="tab-admin-states-history" onclick="switchAdminTab('states-history')">Historial de Estados</button>
+                <button class="tab-btn" id="tab-admin-incidents-history" onclick="switchAdminTab('incidents-history')">Historial de Incidencias</button>
             </div>
 
             <div id="admin-tab-users" class="tab-content active">
@@ -327,6 +329,53 @@
                             </tr>
                         </thead>
                         <tbody id="admin-disputes-tbody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="admin-tab-states-history" class="tab-content">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>Auditoría de Estados de Subasta (historiales_estados)</h3>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Subasta ID</th>
+                                <th>Título Subasta</th>
+                                <th>Usuario Responsable</th>
+                                <th>Estado Anterior</th>
+                                <th>Estado Nuevo</th>
+                                <th>Fecha Cambio</th>
+                                <th>Motivo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-states-history-tbody">
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="admin-tab-incidents-history" class="tab-content">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>Auditoría de Incidencias / Strikes (historiales_incidencias)</h3>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuario Penalizado</th>
+                                <th>Disputa ID</th>
+                                <th>Fecha Registro</th>
+                                <th>Motivo Penalización</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-incidents-history-tbody">
                             
                         </tbody>
                     </table>

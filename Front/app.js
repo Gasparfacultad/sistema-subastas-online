@@ -1255,35 +1255,121 @@ async function loadAdminPanel() {
     }
     
     switchAdminTab(state.adminActiveTab);
-    
-    if (state.adminActiveTab === 'users') {
-        await loadAdminUsers();
-    } else {
-        await loadAdminDisputes();
-    }
 }
 
 function switchAdminTab(tab) {
     state.adminActiveTab = tab;
     
-    const tabUsers = document.getElementById('tab-admin-users');
-    const tabDisputes = document.getElementById('tab-admin-disputes');
-    const contentUsers = document.getElementById('admin-tab-users');
-    const contentDisputes = document.getElementById('admin-tab-disputes');
+    const tabs = ['users', 'disputes', 'states-history', 'incidents-history'];
+    
+    tabs.forEach(t => {
+        const btn = document.getElementById(`tab-admin-${t}`);
+        const content = document.getElementById(`admin-tab-${t}`);
+        if (btn && content) {
+            if (t === tab) {
+                btn.classList.add('active');
+                content.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+                content.classList.remove('active');
+            }
+        }
+    });
     
     if (tab === 'users') {
-        tabUsers.classList.add('active');
-        tabDisputes.classList.remove('active');
-        contentUsers.classList.add('active');
-        contentDisputes.classList.remove('active');
         loadAdminUsers();
-    } else {
-        tabUsers.classList.remove('active');
-        tabDisputes.classList.add('active');
-        contentUsers.classList.remove('active');
-        contentDisputes.classList.add('active');
+    } else if (tab === 'disputes') {
         loadAdminDisputes();
+    } else if (tab === 'states-history') {
+        loadAdminStatesHistory();
+    } else if (tab === 'incidents-history') {
+        loadAdminIncidentsHistory();
     }
+}
+
+async function loadAdminStatesHistory() {
+    try {
+        const response = await apiCall('/api/subastas/historial-estados', { method: 'GET' });
+        if (response.ok) {
+            const history = await response.json();
+            renderAdminStatesHistory(history);
+        } else {
+            showToast('Error al cargar historial de estados.', 'error');
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function renderAdminStatesHistory(history) {
+    const tbody = document.getElementById('admin-states-history-tbody');
+    tbody.innerHTML = '';
+    
+    if (history.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No hay registros de cambios de estado.</td></tr>`;
+        return;
+    }
+    
+    history.sort((a, b) => b.id - a.id);
+    
+    history.forEach(h => {
+        const dateStr = formatDate(h.fechaCambio);
+        const stateAntBadge = h.estadoAnterior ? getAuctionStateBadge(h.estadoAnterior) : '-';
+        const stateNewBadge = getAuctionStateBadge(h.estadoNuevo);
+        
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${h.id}</strong></td>
+                <td>Subasta ID: ${h.subastaId}</td>
+                <td>${h.subastaTitulo}</td>
+                <td>${h.usuarioResponsableUsername} (ID: ${h.usuarioResponsableId})</td>
+                <td>${stateAntBadge}</td>
+                <td>${stateNewBadge}</td>
+                <td>${dateStr}</td>
+                <td>${h.motivo || '-'}</td>
+            </tr>
+        `;
+    });
+}
+
+async function loadAdminIncidentsHistory() {
+    try {
+        const response = await apiCall('/api/disputas/incidencias', { method: 'GET' });
+        if (response.ok) {
+            const incidents = await response.json();
+            renderAdminIncidentsHistory(incidents);
+        } else {
+            showToast('Error al cargar historial de incidencias.', 'error');
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function renderAdminIncidentsHistory(incidents) {
+    const tbody = document.getElementById('admin-incidents-history-tbody');
+    tbody.innerHTML = '';
+    
+    if (incidents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No hay penalizaciones registradas.</td></tr>`;
+        return;
+    }
+    
+    incidents.sort((a, b) => b.id - a.id);
+    
+    incidents.forEach(i => {
+        const dateStr = formatDate(i.fechaRegistro);
+        
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${i.id}</strong></td>
+                <td>${i.usuarioUsername} (ID: ${i.usuarioId})</td>
+                <td>Disputa ID: ${i.disputaId}</td>
+                <td>${dateStr}</td>
+                <td>${i.motivoPenalizacion}</td>
+            </tr>
+        `;
+    });
 }
 
 async function loadAdminUsers() {
@@ -1591,6 +1677,10 @@ async function openCreateAuctionModal() {
     
     document.getElementById('auction-date-start').value = formatDateTimeLocal(now);
     document.getElementById('auction-date-end').value = formatDateTimeLocal(tomorrow);
+    
+    const stateSelect = document.getElementById('auction-state');
+    stateSelect.innerHTML = `<option value="BORRADOR" selected>Borrador (Por defecto)</option>`;
+    stateSelect.disabled = true;
 
     const productSelect = document.getElementById('auction-product');
     productSelect.innerHTML = '';
@@ -1622,7 +1712,13 @@ async function openEditAuctionModal(id) {
     document.getElementById('auction-price-min-increment').value = auc.incrementoMinimoPuja;
     document.getElementById('auction-date-start').value = formatDateTimeLocal(parseBackendDate(auc.fechaInicio));
     document.getElementById('auction-date-end').value = formatDateTimeLocal(parseBackendDate(auc.fechaCierre));
-    document.getElementById('auction-state').value = auc.estado;
+    const stateSelect = document.getElementById('auction-state');
+    stateSelect.innerHTML = `
+        <option value="BORRADOR">Borrador (No visible)</option>
+        <option value="PUBLICADA">Publicada (Visible, en espera)</option>
+    `;
+    stateSelect.disabled = false;
+    stateSelect.value = auc.estado;
     
     const productSelect = document.getElementById('auction-product');
     productSelect.innerHTML = `<option value="${auc.productoId}">Preservar Producto Actual (ID: ${auc.productoId})</option>`;
