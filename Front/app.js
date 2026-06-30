@@ -1927,6 +1927,10 @@ function parseBackendDate(dateString) {
     if (!dateString) return null;
     if (dateString instanceof Date) return dateString;
     
+    if (typeof dateString === 'number' || /^\d+$/.test(String(dateString).trim())) {
+        return new Date(Number(dateString));
+    }
+    
     let normalized = String(dateString).trim().replace(' ', 'T');
     if (normalized.includes('T') && !normalized.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
         normalized += 'Z';
