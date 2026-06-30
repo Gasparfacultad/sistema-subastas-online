@@ -151,7 +151,7 @@ class ProductoEstadoTest {
                 .titulo("Subasta TV")
                 .fechaInicio(LocalDateTime.now().plusDays(1))
                 .fechaCierre(LocalDateTime.now().plusDays(2))
-                .estado(EstadoSubasta.PUBLICADA)
+                .estado(EstadoSubasta.BORRADOR)
                 .build();
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(vendedor));
@@ -179,7 +179,7 @@ class ProductoEstadoTest {
                 .titulo("Subasta TV")
                 .fechaInicio(LocalDateTime.now().plusDays(1))
                 .fechaCierre(LocalDateTime.now().plusDays(2))
-                .estado(EstadoSubasta.PUBLICADA)
+                .estado(EstadoSubasta.BORRADOR)
                 .build();
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(vendedor));

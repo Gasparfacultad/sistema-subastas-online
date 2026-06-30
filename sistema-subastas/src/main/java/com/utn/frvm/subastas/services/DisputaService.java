@@ -205,6 +205,13 @@ public class DisputaService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<HistorialIncidenciaResponseDTO> getAllIncidencias() {
+        return historialIncidenciaRepository.findAll().stream()
+                .map(this::mapIncidenciaToResponse)
+                .collect(Collectors.toList());
+    }
+
     private DisputaResponseDTO mapToResponse(Disputa disputa) {
         return DisputaResponseDTO.builder()
                 .id(disputa.getId())

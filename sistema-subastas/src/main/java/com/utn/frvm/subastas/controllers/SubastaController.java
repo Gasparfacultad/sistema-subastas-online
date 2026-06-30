@@ -2,6 +2,7 @@ package com.utn.frvm.subastas.controllers;
 
 import com.utn.frvm.subastas.dtos.SubastaRequestDTO;
 import com.utn.frvm.subastas.dtos.SubastaResponseDTO;
+import com.utn.frvm.subastas.dtos.HistorialEstadoResponseDTO;
 import com.utn.frvm.subastas.entities.Usuario;
 import com.utn.frvm.subastas.enums.EstadoSubasta;
 import com.utn.frvm.subastas.exceptions.ResourceNotFoundException;
@@ -129,5 +130,10 @@ public class SubastaController {
         return ResponseEntity.ok().build();
     }
 
-
+    @GetMapping("/historial-estados")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Obtener todo el historial de cambios de estado", description = "Devuelve todo el historial de auditoría de estados (Solo Administradores)")
+    public ResponseEntity<List<HistorialEstadoResponseDTO>> getHistorialEstados() {
+        return ResponseEntity.ok(subastaService.getHistorialEstados());
+    }
 }

@@ -2,6 +2,7 @@ package com.utn.frvm.subastas.services;
 
 import com.utn.frvm.subastas.dtos.SubastaRequestDTO;
 import com.utn.frvm.subastas.dtos.SubastaResponseDTO;
+import com.utn.frvm.subastas.dtos.HistorialEstadoResponseDTO;
 import com.utn.frvm.subastas.entities.HistorialEstado;
 import com.utn.frvm.subastas.entities.Producto;
 import com.utn.frvm.subastas.entities.Subasta;
@@ -52,8 +53,8 @@ public class SubastaService {
 
     @Transactional
     public SubastaResponseDTO create(SubastaRequestDTO request) {
-        if (request.getEstado() != EstadoSubasta.BORRADOR && request.getEstado() != EstadoSubasta.PUBLICADA) {
-            throw new BusinessRuleException("Una nueva subasta debe crearse en estado BORRADOR o PUBLICADA.");
+        if (request.getEstado() != EstadoSubasta.BORRADOR) {
+            throw new BusinessRuleException("Una nueva subasta debe crearse en estado BORRADOR.");
         }
         if (request.getPrecioBase() == null || request.getPrecioBase().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessRuleException("El precio base debe ser mayor a cero.");
@@ -398,6 +399,27 @@ public class SubastaService {
                 .descripcion(subasta.getDescripcion())
                 .estado(subasta.getEstado())
                 .cantidadPujas(count)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<HistorialEstadoResponseDTO> getHistorialEstados() {
+        return historialEstadoRepository.findAll().stream()
+                .map(this::mapHistorialToResponse)
+                .collect(Collectors.toList());
+    }
+
+    private HistorialEstadoResponseDTO mapHistorialToResponse(HistorialEstado h) {
+        return HistorialEstadoResponseDTO.builder()
+                .id(h.getId())
+                .subastaId(h.getSubasta().getId())
+                .subastaTitulo(h.getSubasta().getTitulo())
+                .usuarioResponsableId(h.getUsuarioResponsable().getId())
+                .usuarioResponsableUsername(h.getUsuarioResponsable().getUsername())
+                .estadoAnterior(h.getEstadoAnterior())
+                .estadoNuevo(h.getEstadoNuevo())
+                .motivo(h.getMotivo())
+                .fechaCambio(h.getFechaCambio())
                 .build();
     }
 }

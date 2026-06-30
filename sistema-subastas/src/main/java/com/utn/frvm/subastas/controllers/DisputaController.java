@@ -92,6 +92,13 @@ public class DisputaController {
         return ResponseEntity.ok(disputaService.getDisputesByAdmin(adminId));
     }
 
+    @GetMapping("/incidencias")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Obtener todo el historial de incidencias", description = "Devuelve todas las penalizaciones registradas (Solo Administradores)")
+    public ResponseEntity<List<HistorialIncidenciaResponseDTO>> getAllIncidencias() {
+        return ResponseEntity.ok(disputaService.getAllIncidencias());
+    }
+
     @GetMapping("/incidencias/usuario/{usuarioId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Historial de incidencias de un usuario", description = "Devuelve todas las penalizaciones registradas para un usuario dado (Solo Administradores)")
