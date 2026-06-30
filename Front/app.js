@@ -281,7 +281,8 @@ async function handleLogin(event) {
         } else if (response.status === 401) {
             showToast('Credenciales incorrectas.', 'error');
         } else {
-            showToast('Ocurrió un error al intentar ingresar.', 'error');
+            const errMsg = await getErrorMessage(response, 'Ocurrió un error al intentar ingresar.');
+            showToast(errMsg, 'error');
         }
     } catch (e) {
         console.error(e);
@@ -1487,10 +1488,9 @@ function startNotificationsPolling() {
     }
     
     if (state.user) {
-        
         state.notificationsInterval = setInterval(() => {
             loadNotifications();
-        }, 30000);
+        }, 3000);
 
         loadNotifications();
     }
