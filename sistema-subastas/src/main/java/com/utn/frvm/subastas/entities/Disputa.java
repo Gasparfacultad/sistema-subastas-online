@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "disputas")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,20 +20,14 @@ public class Disputa {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subasta_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Subasta subasta;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "iniciador_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Usuario iniciador;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_resolutor_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Usuario adminResolutor;
 
     @Column(name = "motivo_apertura", columnDefinition = "TEXT", nullable = false)

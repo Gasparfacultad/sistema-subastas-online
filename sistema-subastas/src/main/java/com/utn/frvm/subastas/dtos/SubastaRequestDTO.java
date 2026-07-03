@@ -12,34 +12,34 @@ import java.time.LocalDateTime;
 @Builder
 public class SubastaRequestDTO {
 
-    @NotNull(message = "El vendedor es obligatorio")
+    @NotNull(message = "{subasta.vendedorId.notnull}")
     private Long vendedorId;
 
-    @NotNull(message = "El producto es obligatorio")
+    @NotNull(message = "{subasta.productoId.notnull}")
     private Long productoId;
 
-    @NotNull(message = "El precio base es obligatorio")
-    @Positive(message = "El precio base debe ser mayor a cero")
+    @NotNull(message = "{subasta.precioBase.notnull}")
+    @Positive(message = "{subasta.precioBase.positive}")
     private BigDecimal precioBase;
 
-    @NotNull(message = "El incremento mínimo de puja es obligatorio")
-    @Positive(message = "El incremento mínimo de puja debe ser mayor a cero")
+    @NotNull(message = "{subasta.incrementoMinimoPuja.notnull}")
+    @Positive(message = "{subasta.incrementoMinimoPuja.positive}")
     private BigDecimal incrementoMinimoPuja;
 
-    @NotBlank(message = "El título de la subasta no puede estar vacío")
-    @Size(min = 5, max = 150, message = "El título debe tener entre 5 y 150 caracteres")
+    @NotBlank(message = "{subasta.titulo.notblank}")
+    @Size(min = 5, max = 150, message = "{subasta.titulo.size}")
     private String titulo;
 
     private String descripcion;
 
-    @NotNull(message = "La fecha de inicio es obligatoria")
-    @FutureOrPresent(message = "La fecha de inicio debe ser en el presente o futuro")
+    @NotNull(message = "{subasta.fechaInicio.notnull}")
+    @FutureOrPresent(message = "{subasta.fechaInicio.futureOrPresent}")
     private LocalDateTime fechaInicio;
 
-    @NotNull(message = "La fecha de cierre es obligatoria")
-    @Future(message = "La fecha de cierre debe ser en el futuro")
+    @NotNull(message = "{subasta.fechaCierre.notnull}")
+    @Future(message = "{subasta.fechaCierre.future}")
     private LocalDateTime fechaCierre;
 
-    @NotNull(message = "El estado de la subasta es obligatorio")
+    @NotNull(message = "{subasta.estado.notnull}")
     private EstadoSubasta estado;
 }

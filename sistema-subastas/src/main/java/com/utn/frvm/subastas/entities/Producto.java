@@ -4,10 +4,12 @@ import com.utn.frvm.subastas.enums.EstadoProducto;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Entity
 @Table(name = "productos")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,14 +21,10 @@ public class Producto {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "categoria_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Categoria categoria;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "vendedor_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Usuario vendedor;
 
     @Column(nullable = false, length = 150)
@@ -55,4 +53,5 @@ public class Producto {
     protected void onUpdate() {
         this.actualizadoEn = LocalDateTime.now();
     }
+
 }

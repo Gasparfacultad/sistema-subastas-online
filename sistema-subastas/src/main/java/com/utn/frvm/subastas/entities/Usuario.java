@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "usuarios")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -45,13 +46,8 @@ public class Usuario {
     @Column(name = "fecha_registro", nullable = false, updatable = false)
     private LocalDateTime fechaRegistro;
 
-    @Column(name = "fecha_actualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bloqueado_por_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Usuario bloqueadoPor;
 
     @Column(name = "motivo_bloqueo", length = 255)
@@ -63,14 +59,18 @@ public class Usuario {
     @PrePersist
     protected void onCreate() {
         this.fechaRegistro = LocalDateTime.now();
-        this.fechaActualizacion = LocalDateTime.now();
         if (this.incidenciasAcumuladas == null) {
             this.incidenciasAcumuladas = 0;
         }
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        this.fechaActualizacion = LocalDateTime.now();
+    public void registrarIncidencia(Usuario admin, String motivo) {
+        this.incidenciasAcumuladas = (this.incidenciasAcumuladas == null ? 0 : this.incidenciasAcumuladas) + 1;
+        if (this.incidenciasAcumuladas >= 3) {
+            this.estado = EstadoUsuario.BLOQUEADO;
+            this.bloqueadoPor = admin;
+            this.fechaBloqueo = LocalDateTime.now();
+            this.motivoBloqueo = "Acumulación de 3 incidencias: " + (motivo != null ? motivo : "");
+        }
     }
 }

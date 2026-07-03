@@ -1,11 +1,14 @@
 package com.utn.frvm.subastas.entities;
 
+import com.utn.frvm.subastas.enums.EstadoSubasta;
+
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
 @Table(name = "categorias")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -20,4 +23,5 @@ public class Categoria {
 
     @Column(length = 255)
     private String descripcion;
+
 }
